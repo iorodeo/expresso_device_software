@@ -22,10 +22,10 @@ void loop() {
     t0 = micros();
     linearArray.readData();
     if (cnt > 99) {
-        level[0] = detector.findLevel(linearArray.buffer[0]);
-        //for (int i=0; i<linearArray.numAin; i++) {
-        //    level[i] = detector.findLevel(linearArray.buffer[i]);
-        //}
+        //level[0] = detector.findLevel(linearArray.buffer[0]);
+        for (int i=0; i<linearArray.numAin; i++) {
+            level[i] = detector.findLevel(linearArray.buffer[i]);
+        }
     }
     t1 = micros();
     dt = t1 - t0;
@@ -35,18 +35,20 @@ void loop() {
     while (SerialUSB.available() > 0) {
         byte cmd = SerialUSB.read();
         if (cmd == 'x') {
-            //sendPixelData(0);
-            sendBuffer(detector.workBuffer,detector.numPixel);
+            sendPixelData(0);
+            //sendBuffer(detector.workBuffer,detector.numPixel);
         }
         if (cmd == 'y') {
             SerialUSB << level[0] << endl;
         }
     }
+
+    
     if (cnt < 100) {
         cnt++;
     }
     if (cnt == 99) {
-        linearArray.setNormConst();
+        linearArray.setNormConstFromBuffer();
         cnt++;
     }
 }

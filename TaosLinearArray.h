@@ -10,6 +10,7 @@
 #define _TAOS_LINEAR_ARRAY_H_
 #include "WProgram.h"
 #include "constants.h"
+#include "FlashMemory.h"
 
 class TaosLinearArray {
 
@@ -30,8 +31,13 @@ class TaosLinearArray {
         void readData();
         void setExposure(uint16 val);
         uint16 getExposure();
-        void setNormConst();
+
+        void setNormConstFromBuffer();
+        void setNormConstFromFlash();
+        void saveNormConst2Flash();
+        void saveNormConst2Flash(uint8 chan);
         void unSetNormConst();
+
 
         friend void timerInterrupt1stQtr();
         friend void timerInterrupt2ndQtr();

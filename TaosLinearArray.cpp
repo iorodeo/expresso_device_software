@@ -77,7 +77,7 @@ void TaosLinearArray::readData() {
     while (!dataReady()) {};
 }
 
-void TaosLinearArray::setNormConst() {
+void TaosLinearArray::setNormConstFromBuffer() {
     // Sets the normalization constant values - generally the background pixel
     // intensities w/o a capillary present - for use in normalizing the pixel
     // intensity values.  
