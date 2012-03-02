@@ -32,11 +32,15 @@ class TaosLinearArray {
         void setExposure(uint16 val);
         uint16 getExposure();
 
-        void setNormConstFromBuffer();
-        void setNormConstFromFlash();
-        void saveNormConst2Flash();
-        void saveNormConst2Flash(uint8 chan);
         void unSetNormConst();
+        void setNormConstFromBuffer();
+        void setNormConstFromBuffer(uint8 chanNum);
+
+        void setNormConstFromFlash();
+        void setNormConstFromFlash(uint8 chanNum);
+
+        void saveNormConstToFlash();
+        void saveNormConstToFlash(uint8 chanNum);
 
 
         friend void timerInterrupt1stQtr();

@@ -30,8 +30,6 @@ void DerivFilter::apply(uint8 *data, uint16 len) {
     int32 kPos;
     uint16 n = windowLen/2;
     uint8 dataFilt[len];
-    //uint16 value;
-    //uint8 scaleFact = (2*scale)/(windowLen - 1);
     float value;
     float scaleFact = (2*(float)scale)/((float)windowLen - 1.0);
 
@@ -45,7 +43,6 @@ void DerivFilter::apply(uint8 *data, uint16 len) {
             value = (float) shift;
         }
         else {
-            //value = (scaleFact*data[kPos] + (shift - scaleFact*data[kNeg]));
             value = (scaleFact*(float)data[kPos] + ((float) shift - (float)scaleFact*data[kNeg]));
         }
         dataFilt[i] = (uint8) value;

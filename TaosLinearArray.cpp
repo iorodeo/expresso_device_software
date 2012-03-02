@@ -77,17 +77,6 @@ void TaosLinearArray::readData() {
     while (!dataReady()) {};
 }
 
-void TaosLinearArray::setNormConstFromBuffer() {
-    // Sets the normalization constant values - generally the background pixel
-    // intensities w/o a capillary present - for use in normalizing the pixel
-    // intensity values.  
-    for (int i=0; i<numAin; i++) {
-        for (int j=0; j<numPixel; j++) {
-            normConst[i][j] = buffer[i][j];
-        }
-    }
-}
-
 void TaosLinearArray::unSetNormConst() {
     // Unset sets the normalization constants - so that the data in the buffer
     // is the raw sensor data.
@@ -98,6 +87,94 @@ void TaosLinearArray::unSetNormConst() {
     }
 
 }
+
+void TaosLinearArray::setNormConstFromBuffer() {
+    // Sets the normalization constant values, for all channels, based on current
+    // values in the acquisition buffer.  
+    for (uint8 i=0; i<numAin; i++) {
+        setNormConstFromBuffer(i);
+    }
+}
+
+void TaosLinearArray::setNormConstFromBuffer(uint8 chanNum) {
+    // Sets the pixel normalization constant values, for the given chan, to the
+    // current values in the acquisition buffer.
+    if (chanNum < numAin) {
+        for (uint16 j=0; j<numPixel; j++) {
+            normConst[chanNum][j] = buffer[chanNum][j];
+        }
+    }
+}
+
+void TaosLinearArray::setNormConstFromFlash() {
+    // Sets the pixel normalization constants, for all channels, from the values
+    // stored in flash memory. 
+    for (uint8 i=0; i<numAin; i++) {
+        setNormConstFromFlash(i);
+    }
+}
+
+void TaosLinearArray::setNormConstFromFlash(uint8 chanNum) {
+    // Sets the normalization constants for the given channel from the values
+    // stored in flash memory. 
+    uint16 ind0;
+    uint16 ind1;
+    uint8 data0;
+    uint8 data1;
+    uint16 maxAddress;
+    if ((chanNum < numAin) && (chanNum < flashMemory.numPages)) {
+        if (numPixel%2==0) {
+            maxAddress = numPixel/2;
+        }
+        else {
+            maxAddress = numPixel/2 + 1;
+        }
+        if (maxAddress <= flashMemory.maxAddress) {
+            for (uint16 address=0; address<maxAddress; address++) {
+                ind0 = 2*address;
+                ind1 = 2*address + 1;
+                flashMemory.readData(chanNum,address,data0,data1);
+                normConst[chanNum][ind0] = data0;
+                normConst[chanNum][ind1] = data1;
+            }
+        }
+    }
+}
+
+void TaosLinearArray::saveNormConstToFlash() {
+    // Saves the normalization constants, for all channels, to flash
+    // memory.
+    for (uint8 i=0; i<numAin; i++) {
+        saveNormConstToFlash(i);
+    }
+}
+
+void TaosLinearArray::saveNormConstToFlash(uint8 chanNum) {
+    // Saves the normalization constants, for the given channel,  to flash
+    // memory.
+    uint16 ind0;
+    uint16 ind1;
+    uint8 data0;
+    uint8 data1;
+    uint16 maxAddress;
+    if ((chanNum < numAin) && (chanNum < flashMemory.numPages)) {
+        if (numPixel%2==0) {
+            maxAddress = numPixel/2;
+        }
+        else {
+            maxAddress = numPixel/2 + 1;
+        }
+        if (maxAddress <= flashMemory.maxAddress) {
+            for (uint16 address=0; address<maxAddress; address++) {
+                ind0 = 2*address;
+                ind1 = 2*address + 1;
+                data0 = normConst[chanNum][ind0];
+                data1 = normConst[chanNum][ind1];
+                flashMemory.writeData(chanNum,address,data0,data1);
+            }
+        }
+    }
+} 
 
 void TaosLinearArray::startDataRead() {
     // Sets the start signal which signals that data should be read into

@@ -10,6 +10,7 @@ void setup() {
     // Initialize linear array and set exposure
     linearArray.initialize();
     linearArray.setExposure(20);
+    //linearArray.setNormConstFromFlash();
 }
 
 void loop() {
@@ -21,6 +22,7 @@ void loop() {
     // Read data from linear array sensors
     t0 = micros();
     linearArray.readData();
+    //level[0] = detector.findLevel(linearArray.buffer[0]);
     if (cnt > 99) {
         //level[0] = detector.findLevel(linearArray.buffer[0]);
         for (int i=0; i<linearArray.numAin; i++) {
@@ -48,7 +50,9 @@ void loop() {
         cnt++;
     }
     if (cnt == 99) {
-        linearArray.setNormConstFromBuffer();
+        linearArray.setNormConstFromFlash();
+        //linearArray.setNormConstFromBuffer();
+        //linearArray.saveNormConstToFlash();
         cnt++;
     }
 }
