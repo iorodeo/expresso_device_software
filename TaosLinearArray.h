@@ -9,8 +9,8 @@
 #ifndef _TAOS_LINEAR_ARRAY_H_
 #define _TAOS_LINEAR_ARRAY_H_
 #include "WProgram.h"
+#include <FlashMemory.h>
 #include "constants.h"
-#include "FlashMemory.h"
 
 class TaosLinearArray {
 
@@ -38,10 +38,8 @@ class TaosLinearArray {
 
         void setNormConstFromFlash();
         void setNormConstFromFlash(uint8 chanNum);
-
         void saveNormConstToFlash();
         void saveNormConstToFlash(uint8 chanNum);
-
 
         friend void timerInterrupt1stQtr();
         friend void timerInterrupt2ndQtr();
