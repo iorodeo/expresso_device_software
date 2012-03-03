@@ -11,6 +11,9 @@
 #include "MedianFilter.h"
 #include "DerivFilter.h"
 
+const extern float levelNotFound;
+const extern float levelChanError;
+
 class LevelDetector {
     public:
         static const uint16 numPixel = constants::NUM_PIXEL;

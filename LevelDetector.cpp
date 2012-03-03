@@ -11,6 +11,8 @@
 #include <math.h>
 #include "median.h"
 
+const float levelNotFound = -1.0;
+const float levelChanError = -2.0;
 
 LevelDetector::LevelDetector() {
     refLevelSampleNum =constants::refLevelSampleNum;
@@ -76,7 +78,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
         }
     }
     if (!found) {
-        return -1;
+        return levelNotFound;
     }
 
     // Search backward until the first data point less than the lower 
@@ -92,7 +94,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
         }
     }
     if (!found) {
-        return -1;
+        return levelNotFound;
     }
 
     // Search forward until the first data point less than the lower 
@@ -108,7 +110,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
         }
     }
     if (!found) {
-        return -1;
+        return levelNotFound;
     }
 
     // Compute the mid point, delta and fit the peak with a quadratic

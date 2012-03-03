@@ -65,6 +65,6 @@ while 1:
             h_level.set_visible(False)
     pylab.draw()
     i += 1
-    time.sleep(0.25)
+    time.sleep(0.5)
 
                     
