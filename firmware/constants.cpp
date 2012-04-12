@@ -1,6 +1,5 @@
 #include "constants.h"
 namespace constants {
-
     // Taos sensor constants
     const uint8 timerNum = 1;
     const uint32 timerPeriod = 35;

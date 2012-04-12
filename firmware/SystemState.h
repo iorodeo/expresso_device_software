@@ -3,13 +3,14 @@
 #include "WProgram.h"
 #include "constants.h"
 #include "LevelDetector.h"
+#include "TaosLinearArray.h"
 
 class SystemState {
-
     public:
 
         SystemState();
         bool setMode(uint16 _mode);
+        bool setMode(uint16 _mode, uint8 _channel);
         uint16 getMode();
 
         bool setChannel(uint8 _channel);
@@ -17,11 +18,12 @@ class SystemState {
 
         float getLevel(uint8 chan);
         void setLevel(uint8 chan, float value); 
-
+        void update();
     private:
         uint16 mode;                     // Operating mode
         uint8 channel;                   // Channel setting for single channel operation
         float level[constants::NUM_AIN]; // Capillary level data
+        LevelDetector detector;     // Level detector object  
 };
 
 extern const uint16 sysModeStopped;

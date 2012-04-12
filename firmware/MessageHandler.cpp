@@ -3,8 +3,8 @@
 // Serial Commands ids
 const int cmdSetMode = 0;
 const int cmdGetMode = 1;
-const int cmdSetChannel = 2;
-const int cmdGetChannel = 3;
+const int cmdGetChannel = 2;
+const int cmdGetLevel = 3;
 const int cmdGetLevels = 4;
 const int cmdGetPixelData = 5;
 const int cmdGetWorkingBuffer = 6;
@@ -34,68 +34,54 @@ void MessageHandler::processMsg() {
 void MessageHandler::msgSwitchYard() {
     int cmd;
     cmd = readInt(0); 
-    SerialUSB << "cmd: " << cmd << endl;
 
     switch (cmd) {
 
         case cmdSetMode:
-            SerialUSB << "cmdSetMode:" << endl;
             setMode();
             break;
 
         case cmdGetMode:
-            SerialUSB << "cmdGetMode:" << endl;
             getMode();
             break;
 
-        case cmdSetChannel: 
-            SerialUSB << "cmdSetChannel:" << endl;
-            setChannel();
-            break;
-
         case cmdGetChannel:
-            SerialUSB << "cmdGetchannel:" << endl;
             getChannel();
             break;
 
+        case cmdGetLevel:
+            getLevel();
+            break;
+
         case cmdGetLevels:
-            SerialUSB << "cmdGetLevels:" << endl;
             getLevels();
             break;
 
         case cmdGetPixelData:
-            SerialUSB << "cmdGetPixelData:" << endl;
             getPixelData();
             break;
 
         case cmdGetWorkingBuffer:
-            SerialUSB << "cmdGetDerivData:" << endl;
             getWorkingBuffer();
             break;
 
         case cmdGetDeviceId:
-            SerialUSB << "cmdGetDeviceId:" << endl;
             getDeviceId();
             break;
 
         case cmdGetDeviceNumber:
-            SerialUSB << "cmdGetDeviceNumber:" << endl;
             break;
 
         case cmdSetDeviceNumber:
-            SerialUSB << "cmdSetDeviceNumber:" << endl;
             break;
 
         case cmdUnsetNormConst:
-            SerialUSB << "cmdUnsetNormConst:" << endl;
             break;
 
         case cmdSetNormConstFromBuffer:
-            SerialUSB << "cmdSetNormConstFromBuffer:" << endl;
             break;
 
         case cmdSetNormConstFromFlash:
-            SerialUSB << "cmdSetNormConstFromFlash:" << endl;
             break;
 
         default:
@@ -108,13 +94,23 @@ void MessageHandler::msgSwitchYard() {
 void MessageHandler::setMode() {
     // Set the device's current operating mode
     uint16 mode;
-    if ( numberOfItems() == 2 ) {
+    uint8 channel;
+    uint16 num = numberOfItems();
+    if (num == 2) {
         mode = (uint16) readInt(1);
         if (systemState.setMode(mode)) {
             SerialUSB <<  rspSuccess << endl;
             return;
-        } 
+        }
     }
+    if (num == 3) {
+        mode = (uint16) readInt(1);
+        channel = (uint8) readInt(2);
+        if (systemState.setMode(mode,channel)) {
+            SerialUSB <<  rspSuccess << endl;
+            return;
+        } 
+    } 
     SerialUSB << rspError  << endl;
     return;
 } 
@@ -125,22 +121,24 @@ void MessageHandler::getMode() {
     SerialUSB << rspSuccess << " " << mode << endl;
 }
 
-void MessageHandler::setChannel() {
-    // Set the device's "single channel mode" channel 
-    uint8 chan;
-    if (numberOfItems() == 2) {
-        chan = (uint8) readInt(1);
-        if (systemState.setChannel(chan)) {
-            SerialUSB << rspSuccess << endl;
-        }
-    }
-    SerialUSB << rspError << endl;
-}
-
 void MessageHandler::getChannel() {
     // Get the device's "single channel mode" channel
     uint8 chan = systemState.getChannel();
     SerialUSB << rspSuccess << " " << chan << endl;
+}
+
+void MessageHandler::getLevel() {
+    uint8 chan;
+    float level;
+    if (numberOfItems() == 2) {
+        chan = (uint8) readInt(1);
+        level = systemState.getLevel(chan);
+        if (level) {
+            SerialUSB << rspSuccess << " " << level << endl;
+            return;
+        }
+    }
+    SerialUSB << rspError << endl;
 }
 
 void MessageHandler::getLevels() {
@@ -168,8 +166,9 @@ void MessageHandler::getPixelData() {
         SerialUSB << systemState.getLevel(channel); 
         SerialUSB << endl;
 
-        // Send pixel data
+        // Send pixel data as raw bytes
         sendPixelData(channel);
+        return;
     }
     SerialUSB << rspError << endl;
 }
