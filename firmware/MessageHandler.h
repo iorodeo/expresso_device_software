@@ -13,6 +13,7 @@ class MessageHandler : public SerialReceiver {
     private:
         void setMode();
         void getMode();
+        void setChannel();
         void getChannel();
         void getLevel();
         void getLevels();

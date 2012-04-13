@@ -26,14 +26,13 @@ bool SystemState::setMode(uint16 _mode) {
 
 // Overloaded method for handling sysModeSingleChannel
 bool SystemState::setMode(uint16 _mode, uint8 _channel) {
-    if ( (_mode == sysModeSingleChannel)&&(_channel < constants::NUM_AIN) ) {
-        mode = _mode;
-        channel = _channel;
-        return true;
-    }
-    else {
+    if (!setMode(_mode)) {
         return false;
     }
+    if (!setChannel(_channel)) {
+        return false;
+    }
+    return true;
 }
 
 uint16 SystemState::getMode() {

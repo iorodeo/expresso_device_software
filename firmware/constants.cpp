@@ -2,7 +2,7 @@
 namespace constants {
     // Taos sensor constants
     const uint8 timerNum = 1;
-    const uint32 timerPeriod = 35;
+    const uint32 timerPeriod = 30;
     const int timerChanPwm = 1; 
     const int timerChan1stQtr =2;  
     const int timerChan2ndQtr = 3;

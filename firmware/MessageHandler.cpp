@@ -14,6 +14,7 @@ const int cmdSetDeviceNumber = 9;
 const int cmdUnsetNormConst = 10;
 const int cmdSetNormConstFromBuffer = 11;
 const int cmdSetNormConstFromFlash = 12;
+const int cmdSetChannel = 13;
 
 // Serial Response ids 
 const int rspSuccess = 0;
@@ -47,6 +48,10 @@ void MessageHandler::msgSwitchYard() {
 
         case cmdGetChannel:
             getChannel();
+            break;
+
+        case cmdSetChannel:
+            setChannel();
             break;
 
         case cmdGetLevel:
@@ -125,6 +130,20 @@ void MessageHandler::getChannel() {
     // Get the device's "single channel mode" channel
     uint8 chan = systemState.getChannel();
     SerialUSB << rspSuccess << " " << chan << endl;
+}
+
+void MessageHandler::setChannel() {
+    uint16 num = numberOfItems();
+    uint8 chan;
+    if (num == 2) {
+        chan = (uint8) readInt(1);
+        if (systemState.setChannel(chan)) {
+            SerialUSB << rspSuccess << endl;
+            return;
+        }
+    }
+    SerialUSB << rspError << endl;
+    return;
 }
 
 void MessageHandler::getLevel() {
