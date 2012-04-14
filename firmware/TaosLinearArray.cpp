@@ -81,11 +81,16 @@ void TaosLinearArray::unSetNormConst() {
     // Unset sets the normalization constants - so that the data in the buffer
     // is the raw sensor data.
     for (int i=0; i<numAin; i++) {
+        unSetNormConst(i);
+    }
+}
+
+void TaosLinearArray::unSetNormConst(uint8 chanNum) {
+    if (chanNum < numAin) {
         for (int j=0; j<numPixel; j++) {
-            normConst[i][j] = normBaseLevel; 
+            normConst[chanNum][j] = normBaseLevel; 
         }
     }
-
 }
 
 void TaosLinearArray::setNormConstFromBuffer() {

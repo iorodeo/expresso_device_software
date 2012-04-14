@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>675</width>
-    <height>704</height>
+    <width>717</width>
+    <height>662</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="deviceTab">
        <attribute name="title">
@@ -235,6 +235,22 @@
                </widget>
               </item>
               <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Expanding</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>30</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
                <widget class="QPushButton" name="singleChannelStart">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -256,19 +272,6 @@
              </layout>
             </widget>
            </item>
-           <item>
-            <spacer name="horizontalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
           </layout>
          </widget>
         </item>
@@ -288,6 +291,22 @@
               <string>Pixel Values</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_5">
+              <item>
+               <widget class="MplWidget" name="mpl" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>200</width>
+                  <height>200</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
               <item>
                <widget class="QWidget" name="widget_11" native="true">
                 <layout class="QHBoxLayout" name="horizontalLayout_14">
@@ -311,17 +330,20 @@
                   </spacer>
                  </item>
                  <item>
-                  <widget class="QCheckBox" name="pixelNormCheckBox">
-                   <property name="text">
-                    <string>Normalization</string>
+                  <widget class="QLabel" name="label_10">
+                   <property name="font">
+                    <font>
+                     <weight>75</weight>
+                     <bold>true</bold>
+                    </font>
                    </property>
-                   <property name="checked">
-                    <bool>true</bool>
+                   <property name="text">
+                    <string>Pixel Normalization</string>
                    </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="setPixelNormPushButton">
+                  <widget class="QPushButton" name="clearNormalizationPushButton">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -335,27 +357,18 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Set Coeff</string>
+                    <string>Clear</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="setNormalizationPushButton">
+                   <property name="text">
+                    <string>Set</string>
                    </property>
                   </widget>
                  </item>
                 </layout>
-               </widget>
-              </item>
-              <item>
-               <widget class="MplWidget" name="mpl" native="true">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>200</width>
-                  <height>200</height>
-                 </size>
-                </property>
                </widget>
               </item>
              </layout>
@@ -444,27 +457,72 @@
          <widget class="QWidget" name="widget_6" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <spacer name="verticalSpacer">
+            <widget class="QWidget" name="multiChannelStartWidget" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QCheckBox" name="loggingCheckBox">
+                <property name="font">
+                 <font>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Logging</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="multiChannelStart">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Start</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line_7">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>5</width>
-               <height>5</height>
-              </size>
-             </property>
-            </spacer>
+            </widget>
            </item>
            <item>
             <widget class="QTabWidget" name="multiChannelDeviceTabWidget">
              <property name="currentIndex">
               <number>0</number>
              </property>
-             <widget class="QWidget" name="">
+             <widget class="QWidget" name="widget">
               <attribute name="title">
                <string>Device 1</string>
               </attribute>
@@ -479,8 +537,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>593</width>
-                    <height>399</height>
+                    <width>635</width>
+                    <height>386</height>
                    </rect>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -944,59 +1002,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QWidget" name="multiChannelStartWidget" native="true">
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <item>
-               <spacer name="horizontalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QPushButton" name="multiChannelStart">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Start</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="logMultiChannel">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Log data</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="Line" name="line_7">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QWidget" name="multiChannelLogFileWidget" native="true">
+            <widget class="QWidget" name="logFileWidget" native="true">
              <layout class="QHBoxLayout" name="horizontalLayout_15">
               <item>
                <widget class="QLabel" name="label_9">
@@ -1007,7 +1013,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>Log:</string>
+                 <string>Log File: </string>
                 </property>
                </widget>
               </item>
@@ -1048,7 +1054,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>675</width>
+     <width>717</width>
      <height>23</height>
     </rect>
    </property>

@@ -32,29 +32,39 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.initialize()
         self.setupTimers()
 
+        # Testing --------------- 
         self.t_last = None
+        # -----------------------
+
+    def main(self):
+        self.show()
 
     def closeEvent(self,event):
         if self.dev is not None:
             self.cleanUpAndCloseDevice()
         event.accept()
+
+    def cleanUpAndCloseDevice(self):
+        self.dev.setModeStopped()
+        self.dev.setChannel(0)
+        self.dev.close()
+        self.dev = None
+
         
     def connectActions(self):
-
         # Device Manager tab
         self.portLineEdit.editingFinished.connect(self.portLineEditFinished_Callback)
         self.connectPushButton.pressed.connect(self.connectPressed_Callback)
         self.connectPushButton.clicked.connect(self.connectClicked_Callback)
 
-        # Single channel mode tab
+        # Actions for widgets on the single channel tab
         for chan in range(1,array_reader.NUM_CHANNELS+1):
             radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
             radioButton.clicked.connect(self.channelRadioButtonClicked_Callback)
         self.singleChannelStart.clicked.connect(self.singleChannelStart_Callback)
 
-        ## Multi channel mode tab
-        #self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
-
+        # Actions for widgets on the multi channel mode tab
+        self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
         #self.logMultiChannel.clicked.connect(self.logMultiChannel_Callback)
 
     def initialize(self):
@@ -70,11 +80,9 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.channelRadioButton_1.setChecked(True)
         self.singleChannelDeviceComboBox.addItem('Device 1')
 
-        # Set progressbar ranges
-        self.singleChannelProgressBar.setRange(0,CAPILLARY_VOLUME)
-        for i in range(1,6):
-            progressBar = getattr(self,'multiChannelProgressBar_{0}'.format(i))
-            progressBar.setRange(0,CAPILLARY_VOLUME) 
+        # Set progressbar ranges 
+        self.setAllProgressBarRange()
+        self.clearAllProgressBar()
 
         # Initialize plot and array for sensor data
         self.initializePlot()
@@ -95,7 +103,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.mpl.canvas.ax.set_ylim(0,AIN_MAX_VOLT)
         self.mpl.canvas.ax.set_xlabel('pixel')
         self.mpl.canvas.ax.set_ylabel('intensity (V)')
-
 
     def portLineEditFinished_Callback(self):
         self.port = str(self.portLineEdit.text())
@@ -129,20 +136,16 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         else:
             self.setWidgetEnabledOnDisconnect()
 
-
     def setWidgetEnabledOnDisconnect(self): 
         self.deviceTab.setEnabled(True)
         self.portLineEdit.setEnabled(True)
         self.singleChannelTab.setEnabled(False)
         self.multiChannelTab.setEnabled(False)
-
         self.singleChannelTab.setEnabled(False)
         self.multiChannelTab.setEnabled(False)
-
         self.singleChannelStartWidget.setEnabled(False)
         self.singleChannelPixelBox.setEnabled(False)
         self.singleChannelLevelBox.setEnabled(False)
-
         self.multiChannelDeviceTabWidget.setEnabled(False)
         self.multiChannelStartWidget.setEnabled(False)
         self.statusbar.showMessage('Not Connected')
@@ -168,50 +171,67 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def singleChannelStart_Callback(self):
         if self.timerSingleChannel.isActive():
+            # Stop single channel mode. 
             self.timerSingleChannel.stop()
             self.singleChannelPixelBox.setEnabled(False)
             self.singleChannelLevelBox.setEnabled(False)
+            self.multiChannelTab.setEnabled(True)
+            self.deviceTab.setEnabled(True)
             self.singleChannelStart.setText('Start')
-            self.multiChannelStartWidget.setEnabled(True)
-            self.singleChannelProgressBar.setFormat(r'no data')
-            self.singleChannelProgressBar.setValue(0)
+            self.clearSingleChanProgressBar()
             self.statusbar.showMessage('Connected, Mode = Stopped')
+            self.pixelPlot.set_visible(False)
+            self.levelPlot.set_visible(False)
+            self.mpl.canvas.fig.canvas.draw()
+            self.dev.setModeStopped()
         else:
+            # Start single channel mode - stream in level and pixel data
+            # from single sensor
             self.dev.setModeSingleChannel()
-            self.timerSingleChannel.start()
             self.singleChannelPixelBox.setEnabled(True)
             self.singleChannelLevelBox.setEnabled(True)
+            self.multiChannelTab.setEnabled(False)
+            self.deviceTab.setEnabled(False)
             self.singleChannelStart.setText('Stop')
-            self.multiChannelStartWidget.setEnabled(False)
             self.statusbar.showMessage('Connected, Mode = Single Channel')
+            self.pixelPlot.set_visible(True)
+            self.levelPlot.set_visible(True)
+            self.timerSingleChannel.start()
 
     def setupTimers(self):
         """
         Setup timer object
         """
+        # Timer for single channel mode
         self.timerSingleChannel = QtCore.QTimer()
         self.timerSingleChannel.setInterval(TIMER_SINGLE_INTERVAL_MS)
         self.timerSingleChannel.timeout.connect(self.timerSingleChannel_Callback)
 
-        #self.timerMultiChannel = QtCore.QTimer()
-        #self.timerMultiChannel.setInterval(TIMER_MULTI_INTERVAL_MS)
-        #self.timerMultiChannel.timeout.connect(self.timerMultiChannel_Callback)
+        # Timer for multi channel mode
+        self.timerMultiChannel = QtCore.QTimer()
+        self.timerMultiChannel.setInterval(TIMER_MULTI_INTERVAL_MS)
+        self.timerMultiChannel.timeout.connect(self.timerMultiChannel_Callback)
 
     def timerSingleChannel_Callback(self):
         
-        t0 = time.time()
-        if self.t_last is not None:
-            dt = t0 - self.t_last
-            print(dt)
-        self.t_last = t0
+        ## Testing Compute timer dt 
+        ## ------------------------
+        #t0 = time.time()
+        #if self.t_last is not None:
+        #    dt = t0 - self.t_last
+        #    print(dt)
+        #self.t_last = t0
+        ## ------------------------
 
-        pixelLevel, data = self.dev.getPixelData()
-        fluidLevel = pixelLevel*MM2NL*PIXEL2MM
-        data = data*PIXEL_TO_VOLT
-        #print(fluidLevel)
+        try:
+            pixelLevel, data = self.dev.getPixelData()
+        except AttributeError:
+            return 
+
+        fluidLevel = self.pixelToFluidLevel(pixelLevel)
+        data = self.analogInputToVolt(data)
 
         # Plot pixel data
-        self.pixelPlot.set_visible(True)
         self.pixelPlot.set_data(self.pixelPosArray,data)
 
         # Plot level data and set progress bar value
@@ -221,125 +241,110 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.levelPlot.set_xdata([pixelLevel])
             self.levelPlot.set_ydata([data[pixelLevel]])
             self.levelPlot.set_visible(True)
-            self.singleChannelProgressBar.setFormat(r'%v nl')
-            self.singleChannelProgressBar.show()
-            self.singleChannelProgressBar.setValue(fluidLevel)
+            self.setSingleChanProgressBar(fluidLevel)
         else:
             self.levelPlot.set_visible(False)
-            self.singleChannelProgressBar.setFormat(r'no data')
-            self.singleChannelProgressBar.setValue(0)
-
-        self.mpl.canvas.show()
+            self.clearSingleChanProgressBar()
         self.mpl.canvas.fig.canvas.draw()
 
-        t1 = time.time()
-        dt = t1-t0
-        #print(dt)
-#
-#    def timerMultiChannel_Callback(self):
-#        if self.timerMultiChannel.isActive():
-#            pixelLevelList = self.dev.getLevels()
-#            if pixelLevelList is not None:
-#                for i, pixelLevel in enumerate(pixelLevelList):
-#                    pb = getattr(self,'multiChannelProgressBar_{0}'.format(i+1))
-#                    fluidLevel = pixelLevel*PIXEL2MM*MM2NL
-#                    if fluidLevel >= 0:
-#                        pb.setFormat(r'%v nl')
-#                        pb.show()
-#                        pb.setValue(fluidLevel)
-#                    else:
-#                        pb.setFormat(r'no data')
-#                        pb.setValue(0)
-#            else:
+    def multiChannelStart_Callback(self):
 
-#                for i in range(array_reader.NUM_CHANNELS):
-#                    pb.setFormat(r'no data')
-#                    pb.setValue(0)
-#
-#
-#
-#    def multiChannelStart_Callback(self):
-#        if (self.multiChannelState==STOPPED):
-#            self.timerMultiChannel.start()
-#            rsp = self.dev.setMode(array_reader.MODE_MULTI_CHANNEL)
-#            self.multiChannelStart.setText('Stop')
-#            self.multiChannelState = RUNNING 
-#            self.logMultiChannel.setEnabled(True)
-#            return
-#
-#        if (self.multiChannelState==RUNNING):
-#            self.timerMultiChannel.stop()
-#            self.logMultiChannel.setDisabled(True)
-#            self.multiChannelStart.setText('Start')
-#            self.multiChannelState = STOPPED
-#            for i in range(array_reader.NUM_CHANNELS):
-#                pb = getattr(self,'multiChannelProgressBar_{0}'.format(i+1))
-#                pb.setFormat(r'no data')
-#                pb.setValue(0)
-#
-#            
+        if self.timerMultiChannel.isActive():
+            # Multi channel mode stop
+            self.timerMultiChannel.stop()
+            self.multiChannelStart.setText('Start')
+            self.statusbar.showMessage('Connected, Mode = Stopped')
+            self.clearAllMultiChanProgressBar()
+            self.deviceTab.setEnabled(True)
+            self.singleChannelTab.setEnabled(True)
+            self.logFileWidget.setEnabled(True)
+            self.loggingCheckBox.setEnabled(True)
+            self.dev.setModeStopped()
+        else:
+            # Multi channel mode start
+            self.dev.setModeMultiChannel()
+            self.deviceTab.setEnabled(False)
+            self.singleChannelTab.setEnabled(False)
+            self.logFileWidget.setEnabled(False)
+            self.loggingCheckBox.setEnabled(False)
+            self.multiChannelStart.setText('Stop')
+            self.statusbar.showMessage('Connected, Mode = Multi Channel')
+            self.timerMultiChannel.start()
 
-#    def logMultiChannel_Callback(self):
-#        pass
-#    
+    def timerMultiChannel_Callback(self):
+        pixelLevelList = self.dev.getLevels()
+        fluidLevelList = map(self.pixelToFluidLevel, pixelLevelList)
+        if fluidLevelList is None:
+            fluidLevelList = [-1 for i in range(array_reader.NUM_CHANNELS)]
+        for i, fluidLevel in enumerate(fluidLevelList):
+            if fluidLevel >= 0: 
+                self.setMultiChanProgressBar(i+1,fluidLevel)
+            else: 
+                self.clearMultiChanProgressBar(i+1)
 
 
-#    def setWidgetEnableOnConnect(self):
-#        if (self.tabWidget.currentIndex()==SINGLE_CHANNEL_TAB):
-#            self.portLineEdit.setEnabled(False)
-#            for i in range(array_reader.NUM_CHANNELS):
-#                rb = getattr(self,'channelRadioButton_{0}'.format(i+1))
-#                rb.setEnabled(True)
-#            
-#
-#        if (self.tabWidget.currentIndex()==MULTI_CHANNEL_TAB):
-#            self.multiChannelLevelBox.setEnabled(True)
-#            self.multiChannelStart.setEnabled(True)
-#            self.logMultiChannel.setDisabled(True)
-#            for i in range(array_reader.NUM_CHANNELS):
-#                pb = getattr(self,'multiChannelProgressBar_{0}'.format(i+1))
-#                pb.setFormat(r'no data')
-#                pb.setValue(0)
-#
-#    def setWidgetEnableOnDisconnect(self):
-#        self.portLineEdit.setEnabled(True)
-#        if (self.tabWidget.currentIndex()==SINGLE_CHANNEL_TAB):
-#            for i in range(array_reader.NUM_CHANNELS):
-#                rb = getattr(self,'channelRadioButton_{0}'.format(i+1))
-#                if rb.isChecked():
-#                    rb.setChecked(False)
-#                rb.setDisabled(True)
-#            self.singleChannelPixelBox.setDisabled(True)
-#            self.singleChannelLevelBox.setDisabled(True)
-#            self.singleChannelStart.setDisabled(True)
-#            self.singleChannelProgressBar.setFormat(r'no data')
-#            self.mpl.canvas.hide()
-#            if self.timerSingleChannel.isActive():
-#                self.timerSingleChannel.stop()
-#            if self.timerMultiChannel.isActive():
-#                self.timerMultiChannel.stop()
-#                
-#        if (self.tabWidget.currentIndex()==MULTI_CHANNEL_TAB):
-#            self.logMultiChannel.setDisabled(True)
-#            self.multiChannelStart.setDisabled(True)
-#            self.multiChannelLevelBox.setDisabled(True)
-#            for i in range(array_reader.NUM_CHANNELS):
-#                pb = getattr(self,'multiChannelProgressBar_{0}'.format(i+1))
-#                pb.setFormat(r'no data')
-#                pb.setValue(0)
-#            if self.timerSingleChannel.isActive():
-#                self.timerSingleChannel.stop()
-#            if self.timerMultiChannel.isActive():
-#                self.timerMultiChannel.stop()
+    def pixelToFluidLevel(self,pixelLevel):
+        """
+        Converts the level from pixel position to fluid level in nl.
+        """
+        return pixelLevel*MM2NL*PIXEL2MM
 
-    def cleanUpAndCloseDevice(self):
-        self.dev.setModeStopped()
-        self.dev.setChannel(0)
-        self.dev.close()
-        self.dev = None
+    def analogInputToVolt(self,data):
+        """
+        Converts raw analog input values to voltages.
+        """
+        return data*PIXEL_TO_VOLT
 
-    def main(self):
-        self.show()
+    def getMultiChanProgressBar(self,num):
+        return getattr(self, 'multiChannelProgressBar_{0}'.format(num))
+
+    def clearProgressBar(self,progressBar):
+        progressBar.setFormat(r'no data')
+        progressBar.setValue(0)
+
+    def clearMultiChanProgressBar(self,num):
+        progressBar = self.getMultiChanProgressBar(num)
+        self.clearProgressBar(progressBar)
+
+    def clearAllMultiChanProgressBar(self):
+        for i in range(1,array_reader.NUM_CHANNELS+1):
+            self.clearMultiChanProgressBar(i)
+
+    def clearSingleChanProgressBar(self):
+        self.clearProgressBar(self.singleChannelProgressBar)
+
+    def clearAllProgressBar(self):
+        self.clearSingleChanProgressBar()
+        self.clearAllMultiChanProgressBar()
+
+    def setProgressBar(self,progressBar, value): 
+        progressBar.setFormat(r'%v nl') 
+        progressBar.setValue(value)
+
+    def setMultiChanProgressBar(self, num, value):
+        progressBar = self.getMultiChanProgressBar(num)
+        self.setProgressBar(progressBar, value)
+
+    def setSingleChanProgressBar(self,value):
+        self.setProgressBar(self.singleChannelProgressBar,value)
+
+    def setProgressBarRange(self,progressBar):
+        progressBar.setRange(0,CAPILLARY_VOLUME)
+
+    def setSingleChanProgressBarRange(self):
+        self.setProgressBarRange(self.singleChannelProgressBar)
+
+    def setMultiChanProgressBarRange(self,i): 
+        progressBar = self.getMultiChanProgressBar(i)
+        self.setProgressBarRange(progressBar)
+
+    def setAllMultiChanProgressBarRange(self):
+        for i in range(1,array_reader.NUM_CHANNELS+1):
+            self.setMultiChanProgressBarRange(i)
+
+    def setAllProgressBarRange(self):
+        self.setAllMultiChanProgressBarRange()
+        self.setSingleChanProgressBarRange()
 
 
 def opticalSensorMain():

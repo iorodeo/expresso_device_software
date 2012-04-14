@@ -17,7 +17,7 @@ namespace constants {
     const uint8 upperThreshold = 15; 
     const uint8 lowerThreshold = 5; 
     const uint16 refLevelSampleNum = 20;
-    const bool reverseBuffer = true;
+    const bool reverseBuffer = false;
     const uint16 maxSearchPixel = NUM_PIXEL-167;
     const float peakFitTol = 0.25;
 
@@ -28,4 +28,7 @@ namespace constants {
     const uint16 derivFilterWindow = 21; 
     const uint8 derivFilterShift = 128;
     const uint8 derivFilterScale = 30;
+
+    // Device Id
+    const uint16 deviceId = 1;
 }

@@ -12,8 +12,7 @@ MessageHandler handler;
 
 void setup() {
     linearArray.initialize();
-    linearArray.setExposure(20);
-    //linearArray.setNormConstFromFlash();
+    linearArray.setNormConstFromFlash();
 }
 
 void loop() {

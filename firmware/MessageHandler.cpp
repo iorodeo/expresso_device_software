@@ -11,10 +11,11 @@ const int cmdGetWorkingBuffer = 6;
 const int cmdGetDeviceId = 7;
 const int cmdGetDeviceNumber =8;
 const int cmdSetDeviceNumber = 9;
-const int cmdUnsetNormConst = 10;
+const int cmdUnSetNormConst = 10;
 const int cmdSetNormConstFromBuffer = 11;
 const int cmdSetNormConstFromFlash = 12;
 const int cmdSetChannel = 13;
+const int cmdSaveNormConstToFlash=14;
 
 // Serial Response ids 
 const int rspSuccess = 0;
@@ -30,6 +31,7 @@ void MessageHandler::processMsg() {
             }
         }
     }
+    return;
 }
 
 void MessageHandler::msgSwitchYard() {
@@ -75,24 +77,34 @@ void MessageHandler::msgSwitchYard() {
             break;
 
         case cmdGetDeviceNumber:
+            getDeviceNumber();
             break;
 
         case cmdSetDeviceNumber:
+            setDeviceNumber();
             break;
 
-        case cmdUnsetNormConst:
+        case cmdUnSetNormConst:
+            unSetNormConst();
             break;
 
         case cmdSetNormConstFromBuffer:
+            setNormConstFromBuffer();
             break;
 
         case cmdSetNormConstFromFlash:
+            setNormConstFromFlash();
+            break;
+
+        case cmdSaveNormConstToFlash:
+            saveNormConstToFlash();
             break;
 
         default:
             SerialUSB << rspError << endl;
             break;
     }
+    return;
 }
 
 
@@ -124,12 +136,14 @@ void MessageHandler::getMode() {
     // Get the device's current operating mode.
     uint16 mode = systemState.getMode();
     SerialUSB << rspSuccess << " " << mode << endl;
+    return;
 }
 
 void MessageHandler::getChannel() {
     // Get the device's "single channel mode" channel
     uint8 chan = systemState.getChannel();
     SerialUSB << rspSuccess << " " << chan << endl;
+    return;
 }
 
 void MessageHandler::setChannel() {
@@ -158,6 +172,7 @@ void MessageHandler::getLevel() {
         }
     }
     SerialUSB << rspError << endl;
+    return;
 }
 
 void MessageHandler::getLevels() {
@@ -168,11 +183,12 @@ void MessageHandler::getLevels() {
         SerialUSB << systemState.getLevel(i);
     }
     SerialUSB << endl;
+    return;
 }
 
 void MessageHandler::getPixelData() {
-    // When in "single channel mode" returns the current capillary level
-    // and the pixel intensity data for the current channel.
+    // When in "single channel mode" returns the level and the pixel intensity
+    // data for the current channel.
     uint16 mode;
     uint8 channel;
 
@@ -190,24 +206,84 @@ void MessageHandler::getPixelData() {
         return;
     }
     SerialUSB << rspError << endl;
+    return;
 }
 
 void MessageHandler::getWorkingBuffer() {
+    // NOT DONE 
+    return;
 }
 
 void MessageHandler::getDeviceId() {
+    SerialUSB << rspSuccess << " ";
+    SerialUSB << constants::deviceId << endl;
+    return;
 }
 
 void MessageHandler::getDeviceNumber() {
+    // NOT DONE
+    return;
 }
 
-void MessageHandler::unsetNormConst() {
+void MessageHandler::setDeviceNumber() {
+    // NOT DONE
+    return;
+}
+
+void MessageHandler::unSetNormConst() {
+    uint8 chan;
+    if (numberOfItems()==2) {
+        chan = (uint8) readInt(1);
+        if (chan < linearArray.numAin) { 
+            linearArray.unSetNormConst(chan);
+            SerialUSB << rspSuccess << endl;
+            return;
+        }
+    }
+    SerialUSB << rspError << endl;
+    return;
 }
 
 void MessageHandler::setNormConstFromBuffer() {
+    uint8 chan;
+    if (numberOfItems()==2) {
+        chan = (uint8) readInt(1);
+        if (chan < linearArray.numAin) {
+            linearArray.setNormConstFromBuffer(chan);
+            SerialUSB << rspSuccess << endl;
+            return;
+        }
+    }
+    SerialUSB << rspError << endl;
+    return;
 }
 
 void MessageHandler::setNormConstFromFlash() {
+    uint8 chan;
+    if (numberOfItems()==2){
+        chan = (uint8) readInt(1);
+        if (chan < linearArray.numAin) {
+            linearArray.setNormConstFromFlash(chan);
+            SerialUSB << rspSuccess << endl;
+            return;
+        }
+    }
+    SerialUSB << rspError << endl;
+    return;
+}
+
+void MessageHandler::saveNormConstToFlash() {
+    uint8 chan;
+    if (numberOfItems()==2) {
+        chan = (uint8) readInt(1);
+        if (chan < linearArray.numAin) {
+            linearArray.saveNormConstToFlash(chan);
+            SerialUSB << rspSuccess << endl;
+            return;
+        }
+    }
+    SerialUSB << rspError << endl;
+    return;
 }
 
 void sendPixelData(uint8 channel) {
@@ -227,5 +303,6 @@ void sendPixelData(uint8 channel) {
         pixelValue = linearArray.buffer[channel][n]; 
         SerialUSB << _BYTE((char) pixelValue );
     }
+    return;
 }
 

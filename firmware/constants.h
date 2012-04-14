@@ -34,6 +34,8 @@ namespace constants {
     extern const uint16 derivFilterWindow; 
     extern const uint8 derivFilterShift;
     extern const uint8 derivFilterScale;
+
+    extern const uint16 deviceId;
 }
 
 #endif

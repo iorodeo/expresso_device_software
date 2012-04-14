@@ -33,6 +33,7 @@ class TaosLinearArray {
         uint16 getExposure();
 
         void unSetNormConst();
+        void unSetNormConst(uint8 chanNum);
         void setNormConstFromBuffer();
         void setNormConstFromBuffer(uint8 chanNum);
 

@@ -20,13 +20,21 @@ CMD_GET_DEVICE_NUMBER = 8
 CMD_SET_DEVICE_NUMBER = 9
 CMD_UNSET_NORM_CONST = 10
 CMD_SET_NORM_CONST_FROM_BUFFER = 11
-CMD_SET_NORM_CONST_FROM_FLASK = 12
+CMD_SET_NORM_CONST_FROM_FLASH = 12
 CMD_SET_CHANNEL = 13
+CMD_SAVE_NORM_CONST_TO_FLASH=14
 
 # Operating modes
 MODE_STOPPED = 0
 MODE_SINGLE_CHANNEL = 1
 MODE_MULTI_CHANNEL = 2
+
+ALLOWED_MODES = (
+        MODE_STOPPED, 
+        MODE_SINGLE_CHANNEL, 
+        MODE_MULTI_CHANNEL,
+        )
+ALLOWED_CHANNELS = range(0,NUM_CHANNELS)
 
 SUCCESS_CHR = '0' 
 
@@ -70,11 +78,14 @@ class ArrayReader(serial.Serial):
         current channel setting. 
         """
         if len(args) ==  1:
-            mode = args[0]
+            mode = int(args[0])
+            self.checkMode(mode)
             cmd = self.makeCommand(CMD_SET_MODE, mode)
         else:
-            mode = args[0]
-            chan = args[1]
+            mode = int(args[0])
+            self.checkMode(mode)
+            chan = int(args[1])
+            self.checkChannel(chan)
             cmd = self.makeCommand(CMD_SET_MODE, mode, chan)
         self.write(cmd)
         line = self.readline()
@@ -106,6 +117,8 @@ class ArrayReader(serial.Serial):
         """
         Sets the device's single channel mode channel setting. 
         """
+        chan = int(chan)
+        self.checkChannel(chan)
         cmd = self.makeCommand(CMD_SET_CHANNEL,chan)
         self.write(cmd)
         line=self.readline()
@@ -143,7 +156,11 @@ class ArrayReader(serial.Serial):
         for the currently selected channel (in single channel mode)  is returned.  
         Otherwise the level for the channel specified by chan is returned. 
         """
-        chan = self.getChannel()
+        if chan is None:
+            chan = self.getChannel()
+        else:
+            chan = int(chan)
+            self.checkChannel(chan)
         cmd = self.makeCommand(CMD_GET_LEVEL,chan)
         self.write(cmd)
         line = self.readline()
@@ -163,8 +180,61 @@ class ArrayReader(serial.Serial):
         if not line.startswith(SUCCESS_CHR):
             raise IOError, 'unable to get levels'
         line = line.rsplit()
-        levels = [float(x) for x in line]
+        levels = [float(x) for x in line[1:]]
         return levels
+
+    def unSetNormConst(self,chan):
+        """
+        Unsets the pixel normalization constants for the given channel
+        """
+        chan = int(chan)
+        self.checkChannel(chan)
+        cmd = self.makeCommand(CMD_UNSET_NORM_CONST,chan)
+        self.write(cmd)
+        line = self.readline()
+        if not line.startswith(SUCCESS_CHR):
+            raise IOError, 'unable to unset normalization constants'
+        return
+
+    def setNormConstFromBuffer(self,chan):
+        """
+        Sets the pixel normalization constants for the given channel.
+        """
+        chan = int(chan)
+        self.checkChannel(chan)
+        cmd = self.makeCommand(CMD_SET_NORM_CONST_FROM_BUFFER,chan)
+        self.write(cmd)
+        line = self.readline()
+        if not line.startswith(SUCCESS_CHR):
+            raise IOError, 'unable to set normalization constants from buffer'
+        return
+
+    def setNormConstFromFlash(self,chan):
+        """
+        Sets the pixel normalization constants for the given channel from 
+        flash memory.
+        """
+        chan = int(chan)
+        self.checkChannel(chan)
+        cmd = self.makeCommand(CMD_SET_NORM_CONST_FROM_FLASH,chan)
+        self.write(cmd)
+        line = self.readline()
+        if not line.startswith(SUCCESS_CHR):
+            raise IOError, 'unable to set normalization constants from flash'
+        return
+
+    def saveNormConstToFlash(self,chan):
+        """
+        Saves the current normalization constants to flash memory.
+        """
+        chan = int(chan)
+        self.checkChannel(chan)
+        cmd = self.makeCommand(CMD_SAVE_NORM_CONST_TO_FLASH,chan)
+        self.write(cmd)
+        line = self.readline()
+        if not line.startswith(SUCCESS_CHR):
+            raise IOError, 'unable to save normalization constants to flash'
+        return
 
     def emptyBuffer(self):
         """
@@ -182,6 +252,14 @@ class ArrayReader(serial.Serial):
         cmd = ','.join(args)
         cmd =  '[{0}]'.format(cmd)
         return cmd
+
+    def checkMode(self,mode): 
+        if not mode in ALLOWED_MODES: 
+            raise ValueError, ' mode, {0}, not allowed'.format(mode)
+
+    def checkChannel(self,chan): 
+        if not chan in ALLOWED_CHANNELS: 
+            raise ValueError, 'chan, {0}, not allowed'.format(chan)
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -264,7 +342,7 @@ if __name__ == '__main__':
         mode = dev.getMode()
         print('mode = ', mode)
 
-    if 1:
+    if 0:
         dev.setMode(MODE_MULTI_CHANNEL)
         mode = dev.getMode()
         print('mode = ', mode)
@@ -275,6 +353,30 @@ if __name__ == '__main__':
         dev.setMode(MODE_STOPPED)
         mode = dev.getMode()
         print('mode = ', mode)
+
+    if 1:
+        for i in range(0,NUM_CHANNELS):
+            print('unsetting norm const for chan {0}'.format(i))
+            dev.unSetNormConst(i)
+
+    if 1:
+        for i in range(0,NUM_CHANNELS):
+            print('setting norm const from buffer for chan {0}'.format(i))
+            dev.setNormConstFromBuffer(i)
+
+    if 0:
+        for i in range(0,NUM_CHANNELS):
+            print('setting norm const from flash for chan {0}'.format(i))
+            dev.setNormConstFromFlash(i)
+
+    if 1:
+        for i in range(0,NUM_CHANNELS):
+            print('saving norm const to flash for chan {0}'.format(i))
+            dev.saveNormConstToFlash(i)
+            time.sleep(0.5)
+
+
+
 
 
 

@@ -22,9 +22,10 @@ class MessageHandler : public SerialReceiver {
         void getDeviceId();
         void getDeviceNumber();
         void setDeviceNumber();
-        void unsetNormConst();
+        void unSetNormConst();
         void setNormConstFromBuffer();
         void setNormConstFromFlash();
+        void saveNormConstToFlash();
 };
 
 void sendPixelData(uint8 chan);
