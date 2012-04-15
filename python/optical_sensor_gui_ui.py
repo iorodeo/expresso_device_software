@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'optical_sensor_gui.ui'
 #
-# Created: Sat Apr 14 14:00:23 2012
+# Created: Sat Apr 14 19:32:00 2012
 #      by: PyQt4 UI code generator 4.7.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -489,14 +489,14 @@ class Ui_MainWindow(object):
         self.label_9.setFont(font)
         self.label_9.setObjectName("label_9")
         self.horizontalLayout_15.addWidget(self.label_9)
-        self.label_3 = QtGui.QLabel(self.logFileWidget)
+        self.logFileLabel = QtGui.QLabel(self.logFileWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
-        self.label_3.setSizePolicy(sizePolicy)
-        self.label_3.setObjectName("label_3")
-        self.horizontalLayout_15.addWidget(self.label_3)
+        sizePolicy.setHeightForWidth(self.logFileLabel.sizePolicy().hasHeightForWidth())
+        self.logFileLabel.setSizePolicy(sizePolicy)
+        self.logFileLabel.setObjectName("logFileLabel")
+        self.horizontalLayout_15.addWidget(self.logFileLabel)
         self.setLogFileToolButton = QtGui.QToolButton(self.logFileWidget)
         self.setLogFileToolButton.setObjectName("setLogFileToolButton")
         self.horizontalLayout_15.addWidget(self.setLogFileToolButton)
@@ -514,13 +514,13 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.multiChannelDeviceTabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Expresso Capillary Sensor", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_7.setText(QtGui.QApplication.translate("MainWindow", "Note:  this tab will be flushed out later", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_7.setText(QtGui.QApplication.translate("MainWindow", "Note:  this tab will be flushed out later to handle multiple devices.", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox_3.setTitle(QtGui.QApplication.translate("MainWindow", "Port", None, QtGui.QApplication.UnicodeUTF8))
         self.connectPushButton.setText(QtGui.QApplication.translate("MainWindow", "Connect", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.deviceTab), QtGui.QApplication.translate("MainWindow", "Device Manager", None, QtGui.QApplication.UnicodeUTF8))
@@ -559,7 +559,7 @@ class Ui_MainWindow(object):
         self.multiChannelDeviceTabWidget.setTabText(self.multiChannelDeviceTabWidget.indexOf(self.tab), QtGui.QApplication.translate("MainWindow", "Device 4", None, QtGui.QApplication.UnicodeUTF8))
         self.multiChannelDeviceTabWidget.setTabText(self.multiChannelDeviceTabWidget.indexOf(self.tab_4), QtGui.QApplication.translate("MainWindow", "Device etc", None, QtGui.QApplication.UnicodeUTF8))
         self.label_9.setText(QtGui.QApplication.translate("MainWindow", "Log File: ", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_3.setText(QtGui.QApplication.translate("MainWindow", "default_log_file.hdf5", None, QtGui.QApplication.UnicodeUTF8))
+        self.logFileLabel.setText(QtGui.QApplication.translate("MainWindow", "default_log_file.hdf5", None, QtGui.QApplication.UnicodeUTF8))
         self.setLogFileToolButton.setText(QtGui.QApplication.translate("MainWindow", "...", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.multiChannelTab), QtGui.QApplication.translate("MainWindow", "Multi Channel Mode", None, QtGui.QApplication.UnicodeUTF8))
 

@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="deviceTab">
        <attribute name="title">
@@ -43,7 +43,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Note:  this tab will be flushed out later</string>
+              <string>Note:  this tab will be flushed out later to handle multiple devices.</string>
              </property>
             </widget>
            </item>
@@ -1032,7 +1032,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="label_3">
+               <widget class="QLabel" name="logFileLabel">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                   <horstretch>0</horstretch>
