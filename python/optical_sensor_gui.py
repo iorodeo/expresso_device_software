@@ -7,6 +7,7 @@ import array_reader
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from optical_sensor_gui_ui import Ui_MainWindow 
+from lowpass_filter import LowpassFilter
 
 STOPPED = 0
 RUNNING = 1
@@ -22,6 +23,8 @@ AIN_MAX_VOLT= 3.3
 PIXEL_TO_VOLT = AIN_MAX_VOLT/float(255)
 CAPILLARY_VOLUME = PIXEL2MM*MM2NL*array_reader.ARRAY_SZ
 
+LOWPASS_FREQ_CUTOFF = 0.5 
+
 
 class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
@@ -33,7 +36,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setupTimers()
 
         # Testing --------------- 
-        self.t_last = None
         # -----------------------
 
     def main(self):
@@ -62,10 +64,13 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
             radioButton.clicked.connect(self.channelRadioButtonClicked_Callback)
         self.singleChannelStart.clicked.connect(self.singleChannelStart_Callback)
+        self.clearNormalizationPushButton.clicked.connect(self.clearNormalization_Callback)
+        self.setNormalizationPushButton.clicked.connect(self.setNormalization_Callback)
+        self.saveNormalizationPushButton.clicked.connect(self.saveNormalization_Callback)
+        self.loadNormalizationPushButton.clicked.connect(self.loadNormalization_Callback)
 
         # Actions for widgets on the multi channel mode tab
         self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
-        #self.logMultiChannel.clicked.connect(self.logMultiChannel_Callback)
 
     def initialize(self):
         # ####################################
@@ -90,6 +95,11 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             
         # Set Enabled state of widgets for startup.
         self.setWidgetEnabledOnDisconnect()
+
+        self.lowpassFilter = []
+        for chan in range(array_reader.NUM_CHANNELS):
+            self.lowpassFilter.append(LowpassFilter(LOWPASS_FREQ_CUTOFF))
+        self.t_last = None
 
     def initializePlot(self):
         self.pixelPlot, = self.mpl.canvas.ax.plot([],[],'b',linewidth=2)
@@ -158,6 +168,22 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.multiChannelDeviceTabWidget.setEnabled(True)
         self.statusbar.showMessage('Connected, Mode = Stopped')
 
+    def clearNormalization_Callback(self):
+        chan = self.getCheckedChannelRadioButton()
+        self.dev.unSetNormConst(chan-1)
+
+    def setNormalization_Callback(self):
+        chan = self.getCheckedChannelRadioButton()
+        self.dev.setNormConstFromBuffer(chan-1)
+
+    def saveNormalization_Callback(self):
+        chan = self.getCheckedChannelRadioButton()
+        self.dev.saveNormConstToFlash(chan-1)
+
+    def loadNormalization_Callback(self):
+        chan = self.getCheckedChannelRadioButton()
+        self.dev.setNormConstFromFlash(chan-1)
+
     def getCheckedChannelRadioButton(self):
         for chan in range(1,array_reader.NUM_CHANNELS+1):
             rb = getattr(self,'channelRadioButton_{0}'.format(chan))
@@ -168,6 +194,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def channelRadioButtonClicked_Callback(self):
         chan = self.getCheckedChannelRadioButton()
         self.dev.setChannel(chan-1)
+        self.lowpassFilter[chan-1].value = None 
+        self.t_last = None
 
     def singleChannelStart_Callback(self):
         if self.timerSingleChannel.isActive():
@@ -188,6 +216,9 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             # Start single channel mode - stream in level and pixel data
             # from single sensor
             self.dev.setModeSingleChannel()
+            chan = self.getCheckedChannelRadioButton()
+            self.lowpassFilter[chan-1].value = None 
+            self.t_last = None
             self.singleChannelPixelBox.setEnabled(True)
             self.singleChannelLevelBox.setEnabled(True)
             self.multiChannelTab.setEnabled(False)
@@ -214,14 +245,12 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def timerSingleChannel_Callback(self):
         
-        ## Testing Compute timer dt 
-        ## ------------------------
-        #t0 = time.time()
-        #if self.t_last is not None:
-        #    dt = t0 - self.t_last
-        #    print(dt)
-        #self.t_last = t0
-        ## ------------------------
+        t = time.time()
+        if self.t_last is not None:
+            dt = t - self.t_last
+        else:
+            dt = 0.0
+        self.t_last = t
 
         try:
             pixelLevel, data = self.dev.getPixelData()
@@ -231,6 +260,11 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         fluidLevel = self.pixelToFluidLevel(pixelLevel)
         data = self.analogInputToVolt(data)
 
+        chan = self.getCheckedChannelRadioButton()
+        self.lowpassFilter[chan-1].update(fluidLevel,dt)
+        fluidLevelLowpass = self.lowpassFilter[chan-1].value
+
+
         # Plot pixel data
         self.pixelPlot.set_data(self.pixelPosArray,data)
 
@@ -238,14 +272,16 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         if pixelLevel >= 0:
             pixelLevel = int(pixelLevel)
             fluidLevel = int(fluidLevel)
+            fluidLevelLowpass = int(fluidLevelLowpass)
             self.levelPlot.set_xdata([pixelLevel])
             self.levelPlot.set_ydata([data[pixelLevel]])
             self.levelPlot.set_visible(True)
-            self.setSingleChanProgressBar(fluidLevel)
+            self.setSingleChanProgressBar(fluidLevelLowpass)
         else:
             self.levelPlot.set_visible(False)
             self.clearSingleChanProgressBar()
         self.mpl.canvas.fig.canvas.draw()
+
 
     def multiChannelStart_Callback(self):
 
@@ -271,14 +307,29 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.statusbar.showMessage('Connected, Mode = Multi Channel')
             self.timerMultiChannel.start()
 
+            # Initialize lowpass filters
+            for i in range(array_reader.NUM_CHANNELS):
+                self.lowpassFilter[i].value = None
+            self.t_last = None
+
     def timerMultiChannel_Callback(self):
+        t = time.time()
+        if self.t_last is not None:
+            dt = t - self.t_last
+        else:
+            dt = 0.0
+        self.t_last = t
+
         pixelLevelList = self.dev.getLevels()
         fluidLevelList = map(self.pixelToFluidLevel, pixelLevelList)
+
         if fluidLevelList is None:
             fluidLevelList = [-1 for i in range(array_reader.NUM_CHANNELS)]
         for i, fluidLevel in enumerate(fluidLevelList):
+            self.lowpassFilter[i].update(fluidLevel,dt)
+            fluidLevelLowpass = self.lowpassFilter[i].value
             if fluidLevel >= 0: 
-                self.setMultiChanProgressBar(i+1,fluidLevel)
+                self.setMultiChanProgressBar(i+1,fluidLevelLowpass)
             else: 
                 self.clearMultiChanProgressBar(i+1)
 

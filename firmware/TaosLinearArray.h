@@ -20,6 +20,7 @@ class TaosLinearArray {
         uint8 clkPin;
         uint8 *ainPin;
         uint8 normBaseLevel;
+        uint8 normScaleFact[constants::NUM_AIN][2];
         static const uint8 numAin=constants::NUM_AIN;
         static const uint16 numPixel=constants::NUM_PIXEL;
 

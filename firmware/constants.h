@@ -16,8 +16,9 @@ namespace constants {
     extern const uint8 si1Pin; 
     extern const uint8 clkPin; 
     extern const uint16 exposure; 
-    extern const uint8 normBaseLevel; 
     extern const uint8 ainPin[NUM_AIN];
+    extern const uint8 normBaseLevel; 
+    extern const uint8 normScaleFact[2];
 
     // Level detector constants
     extern const uint8 upperThreshold; 

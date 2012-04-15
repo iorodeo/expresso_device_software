@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'optical_sensor_gui.ui'
 #
-# Created: Fri Apr 13 16:53:50 2012
+# Created: Sat Apr 14 14:00:23 2012
 #      by: PyQt4 UI code generator 4.7.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -193,6 +193,12 @@ class Ui_MainWindow(object):
         self.setNormalizationPushButton = QtGui.QPushButton(self.widget_11)
         self.setNormalizationPushButton.setObjectName("setNormalizationPushButton")
         self.horizontalLayout_14.addWidget(self.setNormalizationPushButton)
+        self.saveNormalizationPushButton = QtGui.QPushButton(self.widget_11)
+        self.saveNormalizationPushButton.setObjectName("saveNormalizationPushButton")
+        self.horizontalLayout_14.addWidget(self.saveNormalizationPushButton)
+        self.loadNormalizationPushButton = QtGui.QPushButton(self.widget_11)
+        self.loadNormalizationPushButton.setObjectName("loadNormalizationPushButton")
+        self.horizontalLayout_14.addWidget(self.loadNormalizationPushButton)
         self.verticalLayout_5.addWidget(self.widget_11)
         self.verticalLayout_6.addWidget(self.singleChannelPixelBox)
         self.verticalLayout_7.addWidget(self.widget_4)
@@ -508,7 +514,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         self.multiChannelDeviceTabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -529,6 +535,8 @@ class Ui_MainWindow(object):
         self.label_10.setText(QtGui.QApplication.translate("MainWindow", "Pixel Normalization", None, QtGui.QApplication.UnicodeUTF8))
         self.clearNormalizationPushButton.setText(QtGui.QApplication.translate("MainWindow", "Clear", None, QtGui.QApplication.UnicodeUTF8))
         self.setNormalizationPushButton.setText(QtGui.QApplication.translate("MainWindow", "Set", None, QtGui.QApplication.UnicodeUTF8))
+        self.saveNormalizationPushButton.setText(QtGui.QApplication.translate("MainWindow", "Save", None, QtGui.QApplication.UnicodeUTF8))
+        self.loadNormalizationPushButton.setText(QtGui.QApplication.translate("MainWindow", "Load", None, QtGui.QApplication.UnicodeUTF8))
         self.singleChannelLevelBox.setTitle(QtGui.QApplication.translate("MainWindow", "Fluid Level", None, QtGui.QApplication.UnicodeUTF8))
         self.singleChannelProgressBar.setFormat(QtGui.QApplication.translate("MainWindow", "%v nl", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.singleChannelTab), QtGui.QApplication.translate("MainWindow", "Single Channel Mode", None, QtGui.QApplication.UnicodeUTF8))
