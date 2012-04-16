@@ -168,8 +168,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.singleChannelTab.setEnabled(False)
         self.multiChannelTab.setEnabled(False)
         self.singleChannelStartWidget.setEnabled(False)
-        self.singleChannelPixelBox.setEnabled(False)
-        self.singleChannelLevelBox.setEnabled(False)
+        self.singleChannelPixelWidget.setEnabled(False)
+        self.singleChannelLevelWidget.setEnabled(False)
         self.multiChannelDeviceTabWidget.setEnabled(False)
         self.multiChannelStartWidget.setEnabled(False)
         self.statusbar.showMessage('Not Connected')
@@ -215,8 +215,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         if self.timerSingleChannel.isActive():
             # Stop single channel mode. 
             self.timerSingleChannel.stop()
-            self.singleChannelPixelBox.setEnabled(False)
-            self.singleChannelLevelBox.setEnabled(False)
+            self.singleChannelPixelWidget.setEnabled(False)
+            self.singleChannelLevelWidget.setEnabled(False)
             self.singleChannelDeviceComboBox.setEnabled(True)
             self.multiChannelTab.setEnabled(True)
             self.deviceTab.setEnabled(True)
@@ -234,8 +234,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             chan = self.getCheckedChannelRadioButton()
             self.lowpassFilter[chan-1].value = None 
             self.tLast = None
-            self.singleChannelPixelBox.setEnabled(True)
-            self.singleChannelLevelBox.setEnabled(True)
+            self.singleChannelPixelWidget.setEnabled(True)
+            self.singleChannelLevelWidget.setEnabled(True)
             self.singleChannelDeviceComboBox.setEnabled(False)
             self.multiChannelTab.setEnabled(False)
             self.deviceTab.setEnabled(False)

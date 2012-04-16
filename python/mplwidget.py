@@ -6,7 +6,7 @@ from matplotlib.ticker import MaxNLocator
 class MplCanvas(FigureCanvas):
 
     def __init__(self):
-        self.fig = Figure(facecolor='w', edgecolor='k')
+        self.fig = Figure(facecolor='w', edgecolor='w')
         self.ax = self.fig.add_subplot(111)
         self.ax.maxNLocator = MaxNLocator
         FigureCanvas.__init__(self,self.fig)

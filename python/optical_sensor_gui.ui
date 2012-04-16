@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>717</width>
-    <height>662</height>
+    <width>712</width>
+    <height>677</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Expresso Capillary Sensor</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_9">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -58,64 +58,59 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="widget_1" native="true">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <widget class="QWidget" name="widget_10" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QGroupBox" name="groupBox_3">
-             <property name="title">
+            <widget class="QLabel" name="label_14">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
               <string>Port</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QLineEdit" name="portLineEdit">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="focusPolicy">
-                 <enum>Qt::ClickFocus</enum>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="connectPushButton">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Connect</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>114</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-             <zorder>portLineEdit</zorder>
-             <zorder>connectPushButton</zorder>
-             <zorder>horizontalSpacer</zorder>
             </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="portLineEdit">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="focusPolicy">
+              <enum>Qt::ClickFocus</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="connectPushButton">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Connect</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>114</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -148,20 +143,24 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
-         <widget class="QWidget" name="singleChannelStartWidget" native="true">
-          <layout class="QHBoxLayout" name="horizontalLayout_12">
-           <property name="topMargin">
-            <number>9</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
+         <widget class="QWidget" name="singleChannelStartWidget_2" native="true">
+          <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QGroupBox" name="suBox">
-             <property name="title">
-              <string>Active Device &amp;&amp; Channel</string>
+            <widget class="QLabel" name="label_11">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_13">
+             <property name="text">
+              <string>Active Device &amp; Channel</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="singleChannelStartWidget" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
               <item>
                <widget class="QComboBox" name="singleChannelDeviceComboBox">
                 <property name="sizePolicy">
@@ -184,21 +183,6 @@
                 </property>
                </widget>
               </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QGroupBox" name="channelBox">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="title">
-              <string/>
-             </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
                <widget class="QRadioButton" name="channelRadioButton_1">
                 <property name="text">
@@ -283,106 +267,110 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="widget_4" native="true">
+         <widget class="QWidget" name="singleChannelPixelWidget" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
-            <widget class="QGroupBox" name="singleChannelPixelBox">
-             <property name="title">
+            <widget class="QLabel" name="label_12">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
               <string>Pixel Values</string>
              </property>
-             <layout class="QVBoxLayout" name="verticalLayout_5">
+            </widget>
+           </item>
+           <item>
+            <widget class="MplWidget" name="mpl" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>200</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_11" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_14">
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <item>
-               <widget class="MplWidget" name="mpl" native="true">
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_10">
+                <property name="font">
+                 <font>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Pixel Normalization</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="clearNormalizationPushButton">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
                 <property name="minimumSize">
                  <size>
-                  <width>200</width>
-                  <height>200</height>
+                  <width>80</width>
+                  <height>0</height>
                  </size>
+                </property>
+                <property name="text">
+                 <string>Clear</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QWidget" name="widget_11" native="true">
-                <layout class="QHBoxLayout" name="horizontalLayout_14">
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <spacer name="horizontalSpacer_3">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="label_10">
-                   <property name="font">
-                    <font>
-                     <weight>75</weight>
-                     <bold>true</bold>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Pixel Normalization</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="clearNormalizationPushButton">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>80</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>Clear</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="setNormalizationPushButton">
-                   <property name="text">
-                    <string>Set</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="saveNormalizationPushButton">
-                   <property name="text">
-                    <string>Save</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="loadNormalizationPushButton">
-                   <property name="text">
-                    <string>Load</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
+               <widget class="QPushButton" name="setNormalizationPushButton">
+                <property name="text">
+                 <string>Set</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="saveNormalizationPushButton">
+                <property name="text">
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="loadNormalizationPushButton">
+                <property name="text">
+                 <string>Load</string>
+                </property>
                </widget>
               </item>
              </layout>
@@ -400,12 +388,35 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line_9">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="singleChannelLevelWidget" native="true">
+          <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
-            <widget class="QGroupBox" name="singleChannelLevelBox">
-             <property name="title">
+            <widget class="QLabel" name="label_13">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
               <string>Fluid Level</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_2" native="true">
+             <layout class="QHBoxLayout" name="horizontalLayout_13">
               <item>
                <spacer name="horizontalSpacer_5">
                 <property name="orientation">
@@ -583,8 +594,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>635</width>
-                    <height>386</height>
+                    <width>630</width>
+                    <height>401</height>
                    </rect>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -1100,7 +1111,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>717</width>
+     <width>712</width>
      <height>23</height>
     </rect>
    </property>
