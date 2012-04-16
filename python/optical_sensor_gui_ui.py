@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'optical_sensor_gui.ui'
 #
-# Created: Sat Apr 14 19:32:00 2012
+# Created: Mon Apr 16 12:39:54 2012
 #      by: PyQt4 UI code generator 4.7.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -239,6 +239,24 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4 = QtGui.QHBoxLayout(self.multiChannelStartWidget)
         self.horizontalLayout_4.setContentsMargins(-1, 0, -1, 0)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.label_3 = QtGui.QLabel(self.multiChannelStartWidget)
+        font = QtGui.QFont()
+        font.setWeight(75)
+        font.setBold(True)
+        self.label_3.setFont(font)
+        self.label_3.setObjectName("label_3")
+        self.horizontalLayout_4.addWidget(self.label_3)
+        self.multiChannelTimeLabel = QtGui.QLabel(self.multiChannelStartWidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.multiChannelTimeLabel.sizePolicy().hasHeightForWidth())
+        self.multiChannelTimeLabel.setSizePolicy(sizePolicy)
+        self.multiChannelTimeLabel.setMinimumSize(QtCore.QSize(100, 0))
+        self.multiChannelTimeLabel.setObjectName("multiChannelTimeLabel")
+        self.horizontalLayout_4.addWidget(self.multiChannelTimeLabel)
+        spacerItem6 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem6)
         self.loggingCheckBox = QtGui.QCheckBox(self.multiChannelStartWidget)
         font = QtGui.QFont()
         font.setWeight(75)
@@ -247,8 +265,6 @@ class Ui_MainWindow(object):
         self.loggingCheckBox.setChecked(True)
         self.loggingCheckBox.setObjectName("loggingCheckBox")
         self.horizontalLayout_4.addWidget(self.loggingCheckBox)
-        spacerItem6 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.horizontalLayout_4.addItem(spacerItem6)
         self.multiChannelStart = QtGui.QPushButton(self.multiChannelStartWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -540,6 +556,8 @@ class Ui_MainWindow(object):
         self.singleChannelLevelBox.setTitle(QtGui.QApplication.translate("MainWindow", "Fluid Level", None, QtGui.QApplication.UnicodeUTF8))
         self.singleChannelProgressBar.setFormat(QtGui.QApplication.translate("MainWindow", "%v nl", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.singleChannelTab), QtGui.QApplication.translate("MainWindow", "Single Channel Mode", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_3.setText(QtGui.QApplication.translate("MainWindow", "Time:", None, QtGui.QApplication.UnicodeUTF8))
+        self.multiChannelTimeLabel.setText(QtGui.QApplication.translate("MainWindow", "_____ s", None, QtGui.QApplication.UnicodeUTF8))
         self.loggingCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Logging", None, QtGui.QApplication.UnicodeUTF8))
         self.multiChannelStart.setText(QtGui.QApplication.translate("MainWindow", "Start", None, QtGui.QApplication.UnicodeUTF8))
         self.label_8.setText(QtGui.QApplication.translate("MainWindow", "Fluid Levels", None, QtGui.QApplication.UnicodeUTF8))

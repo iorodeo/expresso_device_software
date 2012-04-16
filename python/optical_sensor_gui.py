@@ -1,20 +1,21 @@
 from __future__ import print_function
 import os
-import os.path
 import sys
 import functools
 import numpy 
 import time
+import math
 import platform
 import array_reader
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from optical_sensor_gui_ui import Ui_MainWindow 
 from lowpass_filter import LowpassFilter
+from hdf5_logger import HDF5_Logger
 
 # Constants
 TIMER_SINGLE_INTERVAL_MS =  300 
-TIMER_MULTI_INTERVAL_MS =  500 
+TIMER_MULTI_INTERVAL_MS =  250 
 LOWPASS_FREQ_CUTOFF = 0.5 
 MM2NL = 5.0e3/54.8
 PIXEL2MM = 63.5e-3
@@ -97,7 +98,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.lowpassFilter = []
         for chan in range(array_reader.NUM_CHANNELS):
             self.lowpassFilter.append(LowpassFilter(LOWPASS_FREQ_CUTOFF))
-        self.t_last = None
+        self.tLast = None
 
         # Setup log file information
         self.userHome = os.getenv('USERPROFILE')
@@ -107,7 +108,9 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.logPath = self.defaultLogPath 
         self.logFileLabel.setText(self.logPath)
         self.lastLogDir = self.userHome
-
+        self.logger = None
+        self.tStart = None
+        self.multiChannelState = 'cmd' 
 
     def initializePlot(self):
         self.pixelPlot, = self.mpl.canvas.ax.plot([],[],'b',linewidth=2)
@@ -206,7 +209,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         chan = self.getCheckedChannelRadioButton()
         self.dev.setChannel(chan-1)
         self.lowpassFilter[chan-1].value = None 
-        self.t_last = None
+        self.tLast = None
 
     def singleChannelStart_Callback(self):
         if self.timerSingleChannel.isActive():
@@ -230,7 +233,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.dev.setModeSingleChannel()
             chan = self.getCheckedChannelRadioButton()
             self.lowpassFilter[chan-1].value = None 
-            self.t_last = None
+            self.tLast = None
             self.singleChannelPixelBox.setEnabled(True)
             self.singleChannelLevelBox.setEnabled(True)
             self.singleChannelDeviceComboBox.setEnabled(False)
@@ -260,14 +263,17 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
         # Get dt for lowpass filter
         t = time.time()
-        if self.t_last is not None:
-            dt = t - self.t_last
+        if self.tLast is not None:
+            dt = t - self.tLast
         else:
             dt = 0.0
-        self.t_last = t
+        self.tLast = t
 
         # Get fluid level and pixel data
-        pixelLevel, data = self.dev.getPixelData()
+        try:
+            pixelLevel, data = self.dev.getPixelData()
+        except AttributeError, e:
+            return
         fluidLevel = self.pixelToFluidLevel(pixelLevel)
         data = self.analogInputToVolt(data)
 
@@ -298,6 +304,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         if self.timerMultiChannel.isActive():
             # Multi channel mode stop
             self.timerMultiChannel.stop()
+            if self.multiChannelState == 'rsp':
+                self.dev.getLevels_Rsp()
             self.multiChannelStart.setText('Start')
             self.statusbar.showMessage('Connected, Mode = Stopped')
             self.clearAllMultiChanProgressBar()
@@ -306,21 +314,16 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.logFileWidget.setEnabled(True)
             self.loggingCheckBox.setEnabled(True)
             self.dev.setModeStopped()
+            self.multiChannelTimeLabel.setText('____ s')
+            self.tStart = None
             if self.loggingCheckBox.isChecked():
-                ############################################
-                # To do ...
-                # Close log file
-                ############################################
-                pass
+                del self.logger
+                self.logger = None
         else:
+            # If logging is turned on create log file
             if self.loggingCheckBox.isChecked():
-                ############################################
-                # To do .... 
-                # Check for existance of log file
-                # Open log file ... create basic structure
-                ############################################
-                pass
-
+                if not self.createLogFile():
+                    return
             # Multi channel mode start
             self.dev.setModeMultiChannel()
             self.deviceTab.setEnabled(False)
@@ -329,50 +332,112 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.loggingCheckBox.setEnabled(False)
             self.multiChannelStart.setText('Stop')
             self.statusbar.showMessage('Connected, Mode = Multi Channel')
-            self.timerMultiChannel.start()
-
+            self.multiChannelState = 'cmd'
             # Initialize lowpass filters
             for i in range(array_reader.NUM_CHANNELS):
                 self.lowpassFilter[i].value = None
-            self.t_last = None
+            self.tLast = None
+            self.tStart = time.time()
+            self.timerMultiChannel.start()
 
-    def timerMultiChannel_Callback(self):
-        # Get dt for lowpass filter
+    def createLogFile(self):
+        if  os.path.exists(self.logPath):
+            # Check if log path is a regular file - if not error and exit
+            if not os.path.isfile(self.logPath):
+                errMsgTitle = 'Log File Error'
+                errMsg = ['Unable to create log file.']
+                errMsg.append('Path, {0}, exists and is not file.'.format(self.logPath))
+                errMsg = '\n'.join(errMsg)
+                QtGui.QMessageBox.critical(self,errMsgTitle, errMsg)
+                return False
+
+            # Log path is a regular file - check if user wants to overwrite
+            qstMsgTitle = 'Log File Exists'
+            qstMsg = 'Log file, {0}, already exists.'.format(self.logPath)
+            buttonDict = {'Overwrite': 0, 'Cancel': 1}
+            answer = QtGui.QMessageBox.question(self,qstMsgTitle,qstMsg,'Overwrite', 'Cancel')
+            if answer == buttonDict['Cancel']:
+                return
+
+        # User is Ok overwriting log file or it doesn't exist yet. 
+        self.logger = HDF5_Logger(self.logPath,mode='w')
+        self.logger.add_datetime('/','datetime')
+        self.logger.add_dataset('/sample_t',(1,))
+        self.logger.add_attribute('/sample_t', 'unit', 's')
+        deviceName = 'device_1'
+        self.logger.add_group('/{0}'.format(deviceName))
+        for i in range(1,array_reader.NUM_CHANNELS+1):
+            datasetName = '/{0}/channel_{1}'.format(deviceName, i)
+            self.logger.add_dataset(datasetName, (1,))
+            self.logger.add_attribute(datasetName, 'unit', 'nl')
+        return True
+
+    def timerMultiChannel_Callback(self): 
+        """
+        Note, the multi channel callback consists of two alternating states,
+        cmd and rsp. In the cmd state a request for the fluid levels is sent to
+        the devices. In the rsp state the fluid level response is read from the
+        device.
+        """
+        # Get time information
         t = time.time()
-        if self.t_last is not None:
-            dt = t - self.t_last
-        else:
-            dt = 0.0
-        self.t_last = t
+        tRun = t - self.tStart
+        self.multiChannelTimeLabel.setText('{0} s'.format(int(math.floor(tRun))))
+        self.multiChannelTimeLabel.repaint()
 
         # Get fluid level from sensors
-        pixelLevelList = self.dev.getLevels()
-        fluidLevelList = map(self.pixelToFluidLevel, pixelLevelList)
+        if self.multiChannelState == 'cmd':
+            try:
+                self.dev.getLevels_Cmd()
+            except AttributeError, e:
+                return
+            self.multiChannelState = 'rsp'
+        else:
+            try:
+                #pixelLevelList = self.dev.getLevels()
+                pixelLevelList = self.dev.getLevels_Rsp()
+            except AttributeError, e:
+                return
+            self.multiChannelState = 'cmd'
+            fluidLevelList = map(self.pixelToFluidLevel, pixelLevelList)
 
-        # Lowpass filter fluid levels and update progress bars
-        fluidLevelLowpassList = []
-        if fluidLevelList is None:
-            fluidLevelList = [-1 for i in range(array_reader.NUM_CHANNELS)]
-        for i, fluidLevel in enumerate(fluidLevelList):
-            self.lowpassFilter[i].update(fluidLevel,dt)
-            fluidLevelLowpass = self.lowpassFilter[i].value
-            fluidLevelLowpassList.append(fluidLevelLowpass)
-            if fluidLevel >= 0: 
-                self.setMultiChanProgressBar(i+1,fluidLevelLowpass)
-            else: 
-                self.clearMultiChanProgressBar(i+1)
+            if self.tLast is not None:
+                dt = t - self.tLast
+            else:
+                dt = 0.0
+            self.tLast = t
 
-        # Log data
-        if self.loggingCheckBox.isChecked():
-            ##################################
-            # To do ... 
-            # write data to log file.
-            ##################################
-            print('logging data to {0}'.format(self.logPath))
+            # Lowpass filter fluid levels and update progress bars
+            fluidLevelLowpassList = []
+            if fluidLevelList is None:
+                fluidLevelList = [-1 for i in range(array_reader.NUM_CHANNELS)]
+            for i, fluidLevel in enumerate(fluidLevelList):
+                self.lowpassFilter[i].update(fluidLevel,dt)
+                fluidLevelLowpass = self.lowpassFilter[i].value
+                fluidLevelLowpassList.append(fluidLevelLowpass)
+                if fluidLevel >= 0: 
+                    self.setMultiChanProgressBar(i+1,fluidLevelLowpass)
+                else: 
+                    self.clearMultiChanProgressBar(i+1)
+
+            # Log data
+            deviceName = 'device_1'
+            if self.loggingCheckBox.isChecked():
+                self.logger.add_dataset_value('/sample_t',tRun) 
+                for i, level in enumerate(fluidLevelLowpassList):
+                    if level < 0:
+                        level = numpy.nan
+                    dsetName = '/{0}/channel_{1}'.format(deviceName,i+1)
+                    self.logger.add_dataset_value(dsetName,level)
 
     def setLogFile_Callback(self):
         # Get log file
-        filename = QtGui.QFileDialog.getSaveFileName(None,'Select log file',self.lastLogDir)
+        filename = QtGui.QFileDialog.getSaveFileName(
+                None,
+                'Select log file',
+                self.lastLogDir,
+                options = QtGui.QFileDialog.DontConfirmOverwrite,
+                )
         filename = str(filename)
 
         if filename:
@@ -385,6 +450,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.logPath = filename
             self.lastLogDir =  os.path.split(filename)[0]
             self.logFileLabel.setText('{0}'.format(self.logPath))
+
 
     def pixelToFluidLevel(self,pixelLevel):
         """

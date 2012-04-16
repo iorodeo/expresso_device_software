@@ -480,7 +480,7 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QCheckBox" name="loggingCheckBox">
+               <widget class="QLabel" name="label_3">
                 <property name="font">
                  <font>
                   <weight>75</weight>
@@ -488,10 +488,26 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>Logging</string>
+                 <string>Time:</string>
                 </property>
-                <property name="checked">
-                 <bool>true</bool>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="multiChannelTimeLabel">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>100</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>_____ s</string>
                 </property>
                </widget>
               </item>
@@ -507,6 +523,22 @@
                  </size>
                 </property>
                </spacer>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="loggingCheckBox">
+                <property name="font">
+                 <font>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Logging</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </item>
               <item>
                <widget class="QPushButton" name="multiChannelStart">

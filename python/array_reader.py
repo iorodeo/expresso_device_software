@@ -174,8 +174,15 @@ class ArrayReader(serial.Serial):
         """
         Get levels for all channels. 
         """
+        self.getLevels_Cmd()
+        levels = self.getLevels_Rsp()
+        return levels
+
+    def getLevels_Cmd(self):
         cmd = self.makeCommand(CMD_GET_LEVELS)
         self.write(cmd)
+
+    def getLevels_Rsp(self):
         line = self.readline()
         if not line.startswith(SUCCESS_CHR):
             raise IOError, 'unable to get levels'
