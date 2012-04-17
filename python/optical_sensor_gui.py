@@ -24,7 +24,6 @@ PIXEL_TO_VOLT = AIN_MAX_VOLT/float(255)
 CAPILLARY_VOLUME = PIXEL2MM*MM2NL*array_reader.ARRAY_SZ
 LOG_FILE_EXT = '.hdf5'
 DEFAULT_LOG_FILE = 'expresso_default_log{0}'.format(LOG_FILE_EXT)
-LEVEL_MSG_LEN = 7
 
 class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
@@ -536,6 +535,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setAllMultiChanProgressBarFont()
 
     def setProgressBarFont(self, progressBar):
+        # Only on windows .... can leave this the same on linux.  Or could move
+        # to separate text box.
         font = QtGui.QFont("monospace")
         font.setStyleHint(QtGui.QFont.TypeWriter)
         font.setBold(True)
