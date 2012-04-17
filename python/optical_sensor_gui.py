@@ -274,7 +274,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         else:
             dt = 0.0
         self.tLast = t
-        print(dt)
 
         # Get fluid level and pixel data
         try:
