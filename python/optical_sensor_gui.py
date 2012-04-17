@@ -84,6 +84,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.channelRadioButton_1.setChecked(True)
 
         # Set progressbar ranges 
+        self.setAllProgressBarFont()
         self.setAllProgressBarRange()
         self.clearAllProgressBar()
 
@@ -268,6 +269,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         else:
             dt = 0.0
         self.tLast = t
+        print(dt)
 
         # Get fluid level and pixel data
         try:
@@ -406,6 +408,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             else:
                 dt = 0.0
             self.tLast = t
+            print(dt)
 
             # Lowpass filter fluid levels and update progress bars
             fluidLevelLowpassList = []
@@ -469,7 +472,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def clearProgressBar(self,progressBar):
         msg = 'no data'
-        msg = padLevelMsg(msg)
         progressBar.setFormat(msg)
         progressBar.setValue(0)
 
@@ -489,8 +491,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.clearAllMultiChanProgressBar()
 
     def setProgressBar(self,progressBar, value): 
-        valueStr = '{0} nl'.format(int(value))
-        valueStr = padLevelMsg(valueStr)
+        valueStr = '{0:04d} nl'.format(int(value))
         progressBar.setFormat(valueStr)
         progressBar.setValue(value)
 
@@ -519,15 +520,28 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setAllMultiChanProgressBarRange()
         self.setSingleChanProgressBarRange()
 
+    def setMultiChanProgressBarFont(self,i):
+        progressBar = self.getMultiChanProgressBar(i)
+        self.setProgressBarFont(progressBar)
 
-def padLevelMsg(msg): 
-    padNum = LEVEL_MSG_LEN - len(msg)
-    msgList = [msg]
-    for i in range(padNum):
-        msgList.insert(0,' ')
-    msgNew = ''.join(msgList)
-    return msgNew
-    
+    def setAllMultiChanProgressBarFont(self):
+        for i in range(1,array_reader.NUM_CHANNELS+1):
+            self.setMultiChanProgressBarFont(i)
+
+    def setSingleChanProgressBarFont(self):
+        self.setProgressBarFont(self.singleChannelProgressBar)
+
+    def setAllProgressBarFont(self):
+        self.setSingleChanProgressBarFont()
+        self.setAllMultiChanProgressBarFont()
+
+    def setProgressBarFont(self, progressBar):
+        font = QtGui.QFont("monospace")
+        font.setStyleHint(QtGui.QFont.TypeWriter)
+        font.setBold(True)
+        progressBar.setFont(font)
+
+
 def opticalSensorMain():
     app = QtGui.QApplication(sys.argv)
     mainWindow = OpticalSensorMainWindow()
