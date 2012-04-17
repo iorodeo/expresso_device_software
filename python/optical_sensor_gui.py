@@ -24,7 +24,7 @@ PIXEL_TO_VOLT = AIN_MAX_VOLT/float(255)
 CAPILLARY_VOLUME = PIXEL2MM*MM2NL*array_reader.ARRAY_SZ
 LOG_FILE_EXT = '.hdf5'
 DEFAULT_LOG_FILE = 'expresso_default_log{0}'.format(LOG_FILE_EXT)
-
+LEVEL_MSG_LEN = 7
 
 class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
@@ -468,7 +468,9 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         return getattr(self, 'multiChannelProgressBar_{0}'.format(num))
 
     def clearProgressBar(self,progressBar):
-        progressBar.setFormat(r'no data')
+        msg = 'no data'
+        msg = padLevelMsg(msg)
+        progressBar.setFormat(msg)
         progressBar.setValue(0)
 
     def clearMultiChanProgressBar(self,num):
@@ -487,7 +489,9 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.clearAllMultiChanProgressBar()
 
     def setProgressBar(self,progressBar, value): 
-        progressBar.setFormat(r'%v nl') 
+        valueStr = '{0} nl'.format(int(value))
+        valueStr = padLevelMsg(valueStr)
+        progressBar.setFormat(valueStr)
         progressBar.setValue(value)
 
     def setMultiChanProgressBar(self, num, value):
@@ -516,6 +520,14 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setSingleChanProgressBarRange()
 
 
+def padLevelMsg(msg): 
+    padNum = LEVEL_MSG_LEN - len(msg)
+    msgList = [msg]
+    for i in range(padNum):
+        msgList.insert(0,' ')
+    msgNew = ''.join(msgList)
+    return msgNew
+    
 def opticalSensorMain():
     app = QtGui.QApplication(sys.argv)
     mainWindow = OpticalSensorMainWindow()
