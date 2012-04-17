@@ -290,19 +290,29 @@ void sendPixelData(uint8 channel) {
     // Sends linear array pixel data for the given channel to the host PC. 
     // Note, the sensor data is bit shifted by 4 to reduced it is size from 
     // 12bit to 8bits.
-    uint16 n;
-    uint8 pixelValue;
+    
+    //uint16 n;
+    //uint8 pixelValue;
 
-    for (uint16 i=0; i<linearArray.numPixel; i++) {
-        if (constants::reverseBuffer) {
-            n = linearArray.numPixel - i - 1;
-        }
-        else {
-            n = i;
-        }
-        pixelValue = linearArray.buffer[channel][n]; 
-        SerialUSB << _BYTE((char) pixelValue );
+    //for (uint16 i=0; i<linearArray.numPixel; i++) {
+    //    if (constants::reverseBuffer) {
+    //        n = linearArray.numPixel - i - 1;
+    //    }
+    //    else {
+    //        n = i;
+    //    }
+    //    pixelValue = linearArray.buffer[channel][n]; 
+    //    SerialUSB << _BYTE((char) pixelValue );
+    //}
+    //return;
+    //
+    
+    uint16 numSend;
+
+    numSend = linearArray.numPixel/64;
+
+    for (uint16 i=0; i<numSend; i++) {
+        SerialUSB.write((linearArray.buffer[channel] + 64*i), 64);
     }
-    return;
 }
 
