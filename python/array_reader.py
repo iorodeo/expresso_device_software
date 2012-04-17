@@ -128,6 +128,11 @@ class ArrayReader(serial.Serial):
     def getPixelData(self):
         """
         Returns the fluid level and the array of pixel values from the device.
+
+        Note, might want to break this into to functions  - a request and a
+        receive. As timing is a little uneven - i.e.g sometimes we query the
+        micro when it is in the middle of a big computation and it takes bit
+        for it to respond.
         """
         cmd = self.makeCommand(CMD_GET_PIXEL_DATA)
         self.write(cmd)

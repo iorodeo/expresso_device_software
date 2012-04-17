@@ -14,7 +14,7 @@ from lowpass_filter import LowpassFilter
 from hdf5_logger import HDF5_Logger
 
 # Constants
-TIMER_SINGLE_INTERVAL_MS =  300 
+TIMER_SINGLE_INTERVAL_MS =  333 
 TIMER_MULTI_INTERVAL_MS =  250 
 LOWPASS_FREQ_CUTOFF = 0.5 
 MM2NL = 5.0e3/54.8
@@ -260,7 +260,13 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.timerMultiChannel.timeout.connect(self.timerMultiChannel_Callback)
 
     def timerSingleChannel_Callback(self):
-
+        """
+        Note, we might want to make this a command and response type callback
+        like the multiChannel callback.  This is because we occasionally catch
+        the microcontroller when it is busy and it take a little while 200ms
+        for it to respond. Not a high priority at the moment as it works well
+        enought to suit its purpose.
+        """
         # Get dt for lowpass filter
         t = time.time()
         if self.tLast is not None:

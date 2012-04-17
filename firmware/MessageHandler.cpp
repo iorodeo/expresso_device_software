@@ -20,6 +20,7 @@ const int cmdSaveNormConstToFlash=14;
 // Serial Response ids 
 const int rspSuccess = 0;
 const int rspError = -1;
+const uint8 pixelSendChunk = 64;
 
 void MessageHandler::processMsg() {
     if(SerialUSB.isConnected() && (SerialUSB.getDTR() || SerialUSB.getRTS())) {
@@ -291,6 +292,11 @@ void sendPixelData(uint8 channel) {
     // Note, the sensor data is bit shifted by 4 to reduced it is size from 
     // 12bit to 8bits.
     
+    // 
+    
+    //
+    // Old style send - too slow when connected to windows machine
+    // --------------------------------------------------------------------
     //uint16 n;
     //uint8 pixelValue;
 
@@ -305,14 +311,17 @@ void sendPixelData(uint8 channel) {
     //    SerialUSB << _BYTE((char) pixelValue );
     //}
     //return;
-    //
+    //--------------------------------------------------------------------
     
+    // New style send faster when connected to windows also good when connected 
+    // to linus. Note, currently doesn't handle buffer reverse, but do we care?
     uint16 numSend;
-
-    numSend = linearArray.numPixel/64;
-
+    numSend = linearArray.numPixel/pixelSendChunk;
     for (uint16 i=0; i<numSend; i++) {
-        SerialUSB.write((linearArray.buffer[channel] + 64*i), 64);
+        SerialUSB.write(
+                (linearArray.buffer[channel] + pixelSendChunk*i), 
+                pixelSendChunk
+                );
     }
 }
 
