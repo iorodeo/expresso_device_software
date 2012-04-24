@@ -113,7 +113,7 @@ void TaosLinearArray::setNormConstFromBuffer(uint8 chanNum) {
             normConst[chanNum][j] = buffer[chanNum][j];
         }
         normScaleFact[chanNum][0] = constants::normScaleFact[0];
-        normScaleFact[chanNum][0] = constants::normScaleFact[1];
+        normScaleFact[chanNum][1] = constants::normScaleFact[1];
     }
 }
 
@@ -149,7 +149,7 @@ void TaosLinearArray::setNormConstFromFlash(uint8 chanNum) {
                 normConst[chanNum][ind1] = data1;
             }
             normScaleFact[chanNum][0] = constants::normScaleFact[0];
-            normScaleFact[chanNum][0] = constants::normScaleFact[1];
+            normScaleFact[chanNum][1] = constants::normScaleFact[1];
         }
     }
 }
@@ -220,31 +220,24 @@ void TaosLinearArray::timerUpdate2ndQtr() {
     // from the sensor and applies gain normalization to the values.
     uint16 pixelValue;
     uint16 normValue;
-    uint16 numer;
-    uint16 denom;
-    uint16 offset;
-    uint16 value;
-    uint16 bufValue;
+    uint16 normPixelValue;
+    int16  scaledPixelValue;
 
     if ((clkCnt >= 1) && (clkCnt < (numPixel+1))) {
 
         if (readInProgress) {
-            // Read pixel value and apply normalization and scaling
-            pixelValue =  analogRead(ainPin[ainCnt]) >> 4;
+
+            // Read pixel value, normalize and scale
+            pixelValue = analogRead(ainPin[ainCnt]);
             normValue = (uint16) normConst[ainCnt][clkCnt-1];
-            numer = pixelValue*normBaseLevel*normScaleFact[ainCnt][0];
-            denom = normValue*normScaleFact[ainCnt][1];
-            offset = (normBaseLevel*normScaleFact[ainCnt][0])/normScaleFact[ainCnt][1];
-            offset = offset - normBaseLevel;
-
-            // lowpass filter pixels - move coefficients to constants file
-            value = ((numer/denom) - offset);
-            bufValue = ((uint16)buffer[ainCnt][clkCnt-1]); 
-            value = (bufValue + 2*value)/3;  
-            buffer[ainCnt][clkCnt-1] = (uint8) value;
-
-            //buffer[ainCnt][clkCnt-1] = (uint8) ((numer/denom) - offset);
-            //buffer[ainCnt][clkCnt-1] = (uint8) ((pixelValue*normBaseLevel)/normValue); 
+            normPixelValue = pixelValue*normBaseLevel/normValue;
+            scaledPixelValue = (int16) normPixelValue - (int16) (normBaseLevel<<4);
+            scaledPixelValue = (normScaleFact[ainCnt][0]*scaledPixelValue)/normScaleFact[ainCnt][1];
+            scaledPixelValue = scaledPixelValue + (int16) (normBaseLevel<<4);
+            if (scaledPixelValue < 0) {
+                scaledPixelValue = 0;
+            }
+            buffer[ainCnt][clkCnt-1] = (uint8) (scaledPixelValue >> 4);
 
             if (clkCnt == numPixel) {
                 ainCnt++;

@@ -11,12 +11,12 @@ namespace constants {
     const uint8 clkPin = 27;
     const uint16 exposure = 20; 
     const uint8 ainPin[NUM_AIN] = {11, 10, 9, 8, 7};
-    const uint8 normBaseLevel = 128; 
-    const uint8 normScaleFact[2] = {3,2};
+    const uint8 normBaseLevel = 232; 
+    const uint8 normScaleFact[2] = {2,1};
 
     // Level detector constants
-    const uint8 upperThreshold = 25; 
-    const uint8 lowerThreshold = 5; 
+    const uint8 upperThreshold = 50; 
+    const uint8 lowerThreshold = 10; 
     const uint16 refLevelSampleNum = 20;
     const bool reverseBuffer = false;
     const uint16 maxSearchPixel = NUM_PIXEL-167;
