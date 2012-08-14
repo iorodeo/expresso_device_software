@@ -226,19 +226,21 @@ void TaosLinearArray::timerUpdate2ndQtr() {
     if ((clkCnt >= 1) && (clkCnt < (numPixel+1))) {
 
         if (readInProgress) {
-
             // Read pixel value, normalize and scale
             pixelValue = analogRead(ainPin[ainCnt]);
             normValue = (uint16) normConst[ainCnt][clkCnt-1];
             normPixelValue = pixelValue*normBaseLevel/normValue;
+            // Shift offset to zero and scale result and add back in offset
             scaledPixelValue = (int16) normPixelValue - (int16) (normBaseLevel<<4);
             scaledPixelValue = (normScaleFact[ainCnt][0]*scaledPixelValue)/normScaleFact[ainCnt][1];
             scaledPixelValue = scaledPixelValue + (int16) (normBaseLevel<<4);
             if (scaledPixelValue < 0) {
                 scaledPixelValue = 0;
             }
+            if (scaledPixelValue > (255<<4)) {
+                scaledPixelValue = (255<<4);
+            }
             buffer[ainCnt][clkCnt-1] = (uint8) (scaledPixelValue >> 4);
-
             if (clkCnt == numPixel) {
                 ainCnt++;
                 if (ainCnt >= numAin) {
