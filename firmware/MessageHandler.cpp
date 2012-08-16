@@ -16,6 +16,7 @@ const int cmdSetNormConstFromBuffer = 11;
 const int cmdSetNormConstFromFlash = 12;
 const int cmdSetChannel = 13;
 const int cmdSaveNormConstToFlash=14;
+const int cmdGetBoundData = 15;
 
 // Serial Response ids 
 const int rspSuccess = 0;
@@ -67,6 +68,10 @@ void MessageHandler::msgSwitchYard() {
 
         case cmdGetPixelData:
             getPixelData();
+            break;
+
+        case cmdGetBoundData:
+            getBoundData();
             break;
 
         case cmdGetWorkingBuffer:
@@ -187,16 +192,43 @@ void MessageHandler::getLevels() {
     return;
 }
 
+void MessageHandler::getBoundData() {
+    // When in "debug mode" returns the level and 
+    // the pixel intensity data for the current channel.
+    uint16 mode;
+    uint8 channel;
+    int32 a;
+    int32 b;
+
+    mode = systemState.getMode();
+    channel = systemState.getChannel();
+
+    if (mode == sysModeDebug) {
+        systemState.getBounds(channel,&a,&b);
+        SerialUSB << rspSuccess << " "; 
+        SerialUSB << systemState.getLevel(channel); 
+        SerialUSB << " " << a; 
+        SerialUSB << " " << b; 
+        SerialUSB << endl;
+
+        // Send pixel data as raw bytes
+        sendPixelData(channel);
+        return;
+    }
+    SerialUSB << rspError << endl;
+    return;
+}
+
 void MessageHandler::getPixelData() {
-    // When in "single channel mode" returns the level and the pixel intensity
-    // data for the current channel.
+    // When in "single channel OR debug mode" returns the level and 
+    // the pixel intensity data for the current channel.
     uint16 mode;
     uint8 channel;
 
     mode = systemState.getMode();
     channel = systemState.getChannel();
 
-    if (mode == sysModeSingleChannel) {
+    if ((mode == sysModeSingleChannel) || (mode == sysModeDebug)) {
 
         SerialUSB << rspSuccess << " "; 
         SerialUSB << systemState.getLevel(channel); 
@@ -212,6 +244,8 @@ void MessageHandler::getPixelData() {
 
 void MessageHandler::getWorkingBuffer() {
     // NOT DONE 
+    SerialUSB << rspSuccess << endl;
+    sendWorkingBuffer();
     return;
 }
 
@@ -320,6 +354,17 @@ void sendPixelData(uint8 channel) {
     for (uint16 i=0; i<numSend; i++) {
         SerialUSB.write(
                 (linearArray.buffer[channel] + pixelSendChunk*i), 
+                pixelSendChunk
+                );
+    }
+}
+
+void sendWorkingBuffer() {
+    uint16 numSend;
+    numSend = linearArray.numPixel/pixelSendChunk;
+    for (uint16 i=0; i<numSend; i++) {
+        SerialUSB.write(
+                (systemState.detector.workBuffer + pixelSendChunk*i), 
                 pixelSendChunk
                 );
     }

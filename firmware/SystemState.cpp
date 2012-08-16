@@ -4,7 +4,8 @@
 const uint16 sysModeStopped = 0;
 const uint16 sysModeSingleChannel = 1;
 const uint16 sysModeAllChannels = 2;
-const uint16 numberOfModes = 3;
+const uint16 sysModeDebug = 3;
+const uint16 numberOfModes = 4;
 
 SystemState::SystemState() {
     mode = sysModeStopped;
@@ -68,6 +69,20 @@ void SystemState::setLevel(uint8 chan, float value) {
     }
 } 
 
+void SystemState::setBounds(uint8 chan, int32 a, int32 b) {
+    if (chan < constants::NUM_AIN) {
+        bounds[chan][0] = a;
+        bounds[chan][1] = b;
+    }
+} 
+
+void SystemState::getBounds(uint8 chan, int32* a, int32* b) {
+    if (chan < constants::NUM_AIN) {
+        *a = bounds[chan][0];
+        *b = bounds[chan][1];
+    }
+} 
+
 void SystemState::update() {
     linearArray.readData();
     switch (mode) {
@@ -83,6 +98,12 @@ void SystemState::update() {
                 systemState.setLevel(i,level[i]);
             }   
             break;
+        case sysModeDebug:
+            int32 a;
+            int32 b;
+            level[channel] = detector.findLevel(linearArray.buffer[channel],&a,&b);
+            systemState.setLevel(channel,level[channel]);
+            systemState.setBounds(channel,a,b);
         default:
             break;
     }  

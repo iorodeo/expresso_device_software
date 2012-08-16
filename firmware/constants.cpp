@@ -15,8 +15,8 @@ namespace constants {
     const uint8 normScaleFact[2] = {3,2};
 
     // Level detector constants
-    const uint8 upperThreshold = 40; 
-    const uint8 lowerThreshold = 10; 
+    const uint8 upperThreshold = 25; 
+    const uint8 lowerThreshold = 20; 
     const uint16 refLevelSampleNum = 20;
     const bool reverseBuffer = false;
     const uint16 maxSearchPixel = NUM_PIXEL-167;
@@ -28,7 +28,7 @@ namespace constants {
     // Derivative filter constants
     const uint16 derivFilterWindow = 21; 
     const uint8 derivFilterShift = 128;
-    const uint8 derivFilterScale = 30;
+    const uint8 derivFilterScale = 10;
 
     // Device Id
     const uint16 deviceId = 1;

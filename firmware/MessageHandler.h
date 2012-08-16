@@ -18,6 +18,7 @@ class MessageHandler : public SerialReceiver {
         void getLevel();
         void getLevels();
         void getPixelData();
+        void getBoundData();
         void getWorkingBuffer();
         void getDeviceId();
         void getDeviceNumber();
@@ -29,5 +30,6 @@ class MessageHandler : public SerialReceiver {
 };
 
 void sendPixelData(uint8 chan);
+void sendWorkingBuffer();
 
 #endif

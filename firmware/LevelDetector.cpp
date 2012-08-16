@@ -10,6 +10,7 @@
 #include <string.h>
 #include <math.h>
 #include "median.h"
+#include <stdarg.h>
 
 const float levelNotFound = -1.0;
 const float levelChanError = -2.0;
@@ -37,12 +38,17 @@ void LevelDetector::setThresholds(uint8 lower, uint8 upper) {
     upperThreshold = upper;
 }
 
+float LevelDetector::findLevel(uint8 *dataBuffer, int32* a, int32* b) {
+    float level;
+    level = findLevel(dataBuffer);
+    *a = indNeg;
+    *b = indPos;
+    return level;
+}
 
 float LevelDetector::findLevel(uint8 *dataBuffer) {
     bool found;
     int32 indBegin;
-    int32 indNeg;
-    int32 indPos;
     uint8 refLevel;
     float midPoint;
     float indDelta;
@@ -62,7 +68,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     derivFilter.apply(workBuffer,numPixel);
 
     // Find reference level
-    refLevel = findRefLevel();
+    refLevel = 128;//findRefLevel();
 
     // Find index first data point > upper threshold. This index 
     // (indBegin) will be used to as the starting place for forward
@@ -125,7 +131,8 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     else {
         level = midPoint;
     }
-    return level; 
+    //return level; 
+    return midPoint; 
 }
 
 uint8 LevelDetector::findRefLevel() {

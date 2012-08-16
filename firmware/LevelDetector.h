@@ -22,6 +22,9 @@ class LevelDetector {
         LevelDetector();
         void setThresholds(uint8 lower, uint8 upper);
         float findLevel(uint8 *data);
+        float findLevel(uint8 *data, int32* a, int32* b);
+        int32 indNeg;
+        int32 indPos;
     private:
         uint8 lowerThreshold;
         uint8 upperThreshold;

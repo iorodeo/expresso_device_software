@@ -23,16 +23,19 @@ CMD_SET_NORM_CONST_FROM_BUFFER = 11
 CMD_SET_NORM_CONST_FROM_FLASH = 12
 CMD_SET_CHANNEL = 13
 CMD_SAVE_NORM_CONST_TO_FLASH=14
+CMD_GET_BOUND_DATA = 15
 
 # Operating modes
 MODE_STOPPED = 0
 MODE_SINGLE_CHANNEL = 1
 MODE_MULTI_CHANNEL = 2
+MODE_DEBUG = 3
 
 ALLOWED_MODES = (
         MODE_STOPPED, 
         MODE_SINGLE_CHANNEL, 
         MODE_MULTI_CHANNEL,
+        MODE_DEBUG,
         )
 ALLOWED_CHANNELS = range(0,NUM_CHANNELS)
 
@@ -125,6 +128,32 @@ class ArrayReader(serial.Serial):
         if not line.startswith(SUCCESS_CHR):
             raise IOError, 'unable to set channel' 
 
+    def getBoundData(self):
+        """
+        """
+        cmd = self.makeCommand(CMD_GET_BOUND_DATA)
+        self.write(cmd)
+
+        line=self.readline()
+        #if not line.startswith(SUCCESS_CHR):
+            #raise IOError, 'unable to read bound data'
+        line = line.split()
+        level = float(line[1])
+        a = int(line[2])
+        b = int(line[3])
+
+        data = []
+        errorCnt = 0
+        while len(data) < ARRAY_SZ:
+            byte = self.read(1)
+            try:
+                data.append(ord(byte))
+            except TypeError, e:
+                errorCnt += 1
+            if errorCnt >= MAX_ERROR_CNT:
+                raise IOError, 'error reading pixel values'
+        return level,a,b,numpy.array(data)
+        
     def getPixelData(self):
         """
         Returns the fluid level and the array of pixel values from the device.
@@ -154,6 +183,29 @@ class ArrayReader(serial.Serial):
             if errorCnt >= MAX_ERROR_CNT:
                 raise IOError, 'error reading pixel values'
         return level, numpy.array(data)
+
+    def getWorkingBuffer(self):
+        """
+        Returns the data in the working buffer.
+        """
+        cmd = self.makeCommand(CMD_GET_WORKING_BUFFER)
+        self.write(cmd)
+
+        line=self.readline()
+        if not line.startswith(SUCCESS_CHR):
+            raise IOError, 'unable to read pixel data'
+
+        data = []
+        errorCnt = 0
+        while len(data) < ARRAY_SZ:
+            byte = self.read(1)
+            try:
+                data.append(ord(byte))
+            except TypeError, e:
+                errorCnt += 1
+            if errorCnt >= MAX_ERROR_CNT:
+                raise IOError, 'error reading pixel values'
+        return numpy.array(data)
 
     def getLevel(self,chan=None):
         """
