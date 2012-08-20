@@ -21,8 +21,7 @@ namespace constants {
     extern const uint8 normScaleFact[2];
 
     // Level detector constants
-    extern const uint8 upperThreshold; 
-    extern const uint8 lowerThreshold; 
+    extern const uint8 thresholdDelta; 
     extern const uint16 refLevelSampleNum;
     extern const bool reverseBuffer; 
     extern const uint16 maxSearchPixel;

@@ -20,29 +20,22 @@ LevelDetector::LevelDetector() {
     maxSearchPixel = constants::maxSearchPixel;
     reverseBuffer = constants::reverseBuffer;
     peakFitTol = constants::peakFitTol;
-    setThresholds(
-            constants::lowerThreshold, 
-            constants::upperThreshold
-            );
     medianFilter.setWindowLen(constants::medianFilterWindow);
     derivFilter.setWindowLen(constants::derivFilterWindow);
     derivFilter.setScale(constants::derivFilterScale);
     derivFilter.setShift(constants::derivFilterShift);
 }
 
-void LevelDetector::setThresholds(uint8 lower, uint8 upper) {
-    if (upper < lower) {
-        upper = lower;
-    }
-    lowerThreshold = lower;
-    upperThreshold = upper;
-}
-
 float LevelDetector::findLevel(uint8 *dataBuffer, int32* a, int32* b) {
     float level;
+    uint8* thresholds;
+
     level = findLevel(dataBuffer);
     *a = indNeg;
     *b = indPos;
+    //thresholds = derivFilter.getThreshold();
+    //*a = (int32) thresholds[0];
+    //*b = (int32) thresholds[1];
     return level;
 }
 
@@ -54,6 +47,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     float indDelta;
     float peakFit;
     float level;
+    uint16* threshold;
 
     // Copy data buffer and apply median and derivative filters
     if (!reverseBuffer) {
@@ -67,32 +61,42 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     medianFilter.apply(workBuffer,numPixel);
     derivFilter.apply(workBuffer,numPixel);
 
+    threshold = derivFilter.getThreshold();
+
+    upperThreshold = (uint8) (.95*threshold[1]);
+    lowerThreshold = (uint8) (.90*threshold[1]);
+
     // Find reference level
-    refLevel = 128;//findRefLevel();
+    refLevel = findRefLevel();
+
+    if ((upperThreshold - refLevel) < constants::thresholdDelta) {
+        return levelNotFound;
+    }
 
     // Find index first data point > upper threshold. This index 
     // (indBegin) will be used to as the starting place for forward
     // and backward searches for data points < lower threshold.
-    indBegin = 0;
-    found = false;
-    while ((!found) && (indBegin < maxSearchPixel)) {
-        if (workBuffer[indBegin] > (upperThreshold+refLevel)) {
-            found = true;
-        }
-        else {
-            indBegin++;
-        }
-    }
-    if (!found) {
-        return levelNotFound;
-    }
+    //indBegin = 0;
+    //found = false;
+    //while ((!found) && (indBegin < maxSearchPixel)) {
+        //if (workBuffer[indBegin] > (upperThreshold)) {
+            //found = true;
+        //}
+        //else {
+            //indBegin++;
+        //}
+    //}
+    //if (!found) {
+        //return levelNotFound;
+    //}
+    indBegin = threshold[0];
 
     // Search backward until the first data point less than the lower 
     // threshold.
     indNeg = indBegin;
     found = false;
     while ((!found) && (indNeg >= 0)) {
-        if (workBuffer[indNeg] < (lowerThreshold+refLevel)) {
+        if (workBuffer[indNeg] < (lowerThreshold)) {
             found = true;
         }
         else {
@@ -108,7 +112,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     indPos = indBegin;
     found = false;
     while ((!found) && (indPos < maxSearchPixel)) {
-        if (workBuffer[indPos] < (lowerThreshold+refLevel)) {
+        if (workBuffer[indPos] < (lowerThreshold)) {
             found = true;
         }
         else {
@@ -121,16 +125,16 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
 
     // Compute the mid point, delta and fit the peak with a quadratic
     midPoint = (float) (indNeg/2 + indPos/2);
-    indDelta = (float) (indPos - indNeg);
-    peakFit = findPeak((uint16) indNeg, workBuffer+indNeg, indPos-indNeg+1);
+    //indDelta = (float) (indPos - indNeg);
+    //peakFit = findPeak((uint16) indNeg, workBuffer+indNeg, indPos-indNeg+1);
 
-    // Only use peakfit if it is close enough to the mid point. 
-    if ( fabs(peakFit - midPoint) <= peakFitTol*indDelta) {
-        level = peakFit;
-    }
-    else {
-        level = midPoint;
-    }
+    //// Only use peakfit if it is close enough to the mid point. 
+    //if ( fabs(peakFit - midPoint) <= peakFitTol*indDelta) {
+        //level = peakFit;
+    //}
+    //else {
+        //level = midPoint;
+    //}
     //return level; 
     return midPoint; 
 }

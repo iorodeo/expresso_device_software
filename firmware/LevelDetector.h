@@ -20,7 +20,6 @@ class LevelDetector {
         bool reverseBuffer;
         uint8 workBuffer[constants::NUM_PIXEL];
         LevelDetector();
-        void setThresholds(uint8 lower, uint8 upper);
         float findLevel(uint8 *data);
         float findLevel(uint8 *data, int32* a, int32* b);
         int32 indNeg;

@@ -15,8 +15,7 @@ namespace constants {
     const uint8 normScaleFact[2] = {3,2};
 
     // Level detector constants
-    const uint8 upperThreshold = 25; 
-    const uint8 lowerThreshold = 20; 
+    const uint8 thresholdDelta = 25; 
     const uint16 refLevelSampleNum = 20;
     const bool reverseBuffer = false;
     const uint16 maxSearchPixel = NUM_PIXEL-167;

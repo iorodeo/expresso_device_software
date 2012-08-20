@@ -44,7 +44,9 @@ while 1:
         t1 = time.time()
         dt = t1-t0
         #print(dt)
-        #print(i,level)
+        print(i,level,a,b)
+        if (level < 0):
+            sys.exit()
 
         if pixelData is None:
             continue

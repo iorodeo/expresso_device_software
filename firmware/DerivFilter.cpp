@@ -6,11 +6,14 @@
 //
 #include "DerivFilter.h"
 #include <string.h>
+#include "constants.h"
 
 DerivFilter::DerivFilter(uint16 _windowLen, uint8 _scale, uint8 _shift) {
     shift = _shift;
     scale = _scale;
     setWindowLen(_windowLen);
+    maxValueX = 0;
+    maxValueY = 0;
 }
 
 void DerivFilter::setWindowLen(uint16 _windowLen) {
@@ -23,6 +26,14 @@ void DerivFilter::setScale(uint8 _scale) {
 
 void DerivFilter::setShift(uint8 _shift) {
     shift = _shift;
+}
+
+void DerivFilter::setThreshold(uint16 x_val, uint16 y_val){
+    threshold = {x_val, y_val};
+}
+
+uint16* DerivFilter::getThreshold() {
+    return threshold;
 }
 
 void DerivFilter::apply(uint8 *data, uint16 len) {
@@ -46,8 +57,12 @@ void DerivFilter::apply(uint8 *data, uint16 len) {
             value = (scaleFact*(float)data[kPos] + ((float) shift - (float)scaleFact*data[kNeg]));
         }
         dataFilt[i] = (uint8) value;
+
+        if (value > maxValueY) {
+            maxValueY = (uint16) value;
+            maxValueX = i;
+        }
     }
+    setThreshold(maxValueX,maxValueY);
     memcpy(data,dataFilt,len*sizeof(uint8));
 }
-
-
