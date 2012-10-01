@@ -6,10 +6,12 @@ import numpy
 import time
 import math
 import platform
-import array_reader
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from optical_sensor_gui_ui import Ui_MainWindow 
+#import ray_reader
+#from optical_sensor_gui_ui import Ui_MainWindow 
+from expresso.libs.expresso_serial import ArrayReader
+from expresso_gui_ui import Ui_MainWindow 
 from hdf5_logger import HDF5_Logger
 
 # Constants
@@ -21,14 +23,16 @@ PIXEL2MM = 63.5e-3
 AIN_MAX_VOLT= 3.3
 MAX_PIXEL = 768
 PIXEL_TO_VOLT = AIN_MAX_VOLT/float(255)
-CAPILLARY_VOLUME = PIXEL2MM*MM2NL*array_reader.ARRAY_SZ
+NUM_CHANNELS = 5
+ARRAY_SZ = 768
+CAPILLARY_VOLUME = PIXEL2MM*MM2NL*ARRAY_SZ
 LOG_FILE_EXT = '.hdf5'
 DEFAULT_LOG_FILE = 'expresso_default_log{0}'.format(LOG_FILE_EXT)
 
-class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
+class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def __init__(self,parent=None):
-        super(OpticalSensorMainWindow,self).__init__(parent)
+        super(ExpressoMainWindow,self).__init__(parent)
         self.setupUi(self)
         self.connectActions()
         self.initialize()
@@ -55,7 +59,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.connectPushButton.clicked.connect(self.connectClicked_Callback)
 
         # Actions for widgets on the single channel tab
-        for chan in range(1,array_reader.NUM_CHANNELS+1):
+        for chan in range(1,NUM_CHANNELS+1):
             radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
             radioButton.clicked.connect(self.channelRadioButtonClicked_Callback)
         self.singleChannelStart.clicked.connect(self.singleChannelStart_Callback)
@@ -89,7 +93,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
         # Initialize plot and array for sensor data
         self.initializePlot()
-        self.pixelPosArray = numpy.arange(0,array_reader.ARRAY_SZ)
+        self.pixelPosArray = numpy.arange(0,ARRAY_SZ)
             
         # Set Enabled state of widgets for startup.
         self.setWidgetEnabledOnDisconnect()
@@ -114,7 +118,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.mpl.canvas.ax.set_autoscale_on(False)
         self.mpl.canvas.ax.set_position([.125,.15,.8,.75])
         self.mpl.canvas.ax.grid('on')
-        self.mpl.canvas.ax.set_xlim(0,array_reader.ARRAY_SZ)
+        self.mpl.canvas.ax.set_xlim(0,ARRAY_SZ)
         self.mpl.canvas.ax.set_ylim(0,AIN_MAX_VOLT)
         self.mpl.canvas.ax.set_xlabel('pixel')
         self.mpl.canvas.ax.set_ylabel('intensity (V)')
@@ -131,7 +135,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def connectClicked_Callback(self):
         if self.dev == None:
             try:
-                self.dev = array_reader.ArrayReader(self.port)
+                self.dev = ArrayReader(self.port)
                 connected = True
             except Exception, e:
                 QtGui.QMessageBox.critical(self,'Error', str(e))
@@ -193,7 +197,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.dev.setNormConstFromFlash(chan-1)
 
     def getCheckedChannelRadioButton(self):
-        for chan in range(1,array_reader.NUM_CHANNELS+1):
+        for chan in range(1,NUM_CHANNELS+1):
             rb = getattr(self,'channelRadioButton_{0}'.format(chan))
             if rb.isChecked():
                 break
@@ -349,7 +353,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.logger.add_attribute('/sample_t', 'unit', 's')
         deviceName = 'device_1'
         self.logger.add_group('/{0}'.format(deviceName))
-        for i in range(1,array_reader.NUM_CHANNELS+1):
+        for i in range(1,NUM_CHANNELS+1):
             datasetName = '/{0}/channel_{1}'.format(deviceName, i)
             self.logger.add_dataset(datasetName, (1,))
             self.logger.add_attribute(datasetName, 'unit', 'nl')
@@ -392,7 +396,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 fluidLevelList.append(fluidLevel)
 
             if len(fluidLevelList) == 0:
-                fluidLevelList = [-1 for i in range(array_reader.NUM_CHANNELS)]
+                fluidLevelList = [-1 for i in range(NUM_CHANNELS)]
             for i, fluidLevel in enumerate(fluidLevelList):
                 if fluidLevel >= 0: 
                     self.setMultiChanProgressBar(i+1,fluidLevel)
@@ -456,7 +460,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.clearProgressBar(progressBar)
 
     def clearAllMultiChanProgressBar(self):
-        for i in range(1,array_reader.NUM_CHANNELS+1):
+        for i in range(1,NUM_CHANNELS+1):
             self.clearMultiChanProgressBar(i)
 
     def clearSingleChanProgressBar(self):
@@ -489,7 +493,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setProgressBarRange(progressBar)
 
     def setAllMultiChanProgressBarRange(self):
-        for i in range(1,array_reader.NUM_CHANNELS+1):
+        for i in range(1,NUM_CHANNELS+1):
             self.setMultiChanProgressBarRange(i)
 
     def setAllProgressBarRange(self):
@@ -501,7 +505,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setProgressBarFont(progressBar)
 
     def setAllMultiChanProgressBarFont(self):
-        for i in range(1,array_reader.NUM_CHANNELS+1):
+        for i in range(1,NUM_CHANNELS+1):
             self.setMultiChanProgressBarFont(i)
 
     def setSingleChanProgressBarFont(self):
@@ -520,12 +524,12 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         progressBar.setFont(font)
 
 
-def opticalSensorMain():
+def expressoMain():
     app = QtGui.QApplication(sys.argv)
-    mainWindow = OpticalSensorMainWindow()
+    mainWindow = ExpressoMainWindow()
     mainWindow.main()
     app.exec_()
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    opticalSensorMain()
+    expressoMain()

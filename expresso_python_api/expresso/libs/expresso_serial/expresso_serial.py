@@ -2,6 +2,7 @@ from __future__ import print_function
 import serial
 import time
 import numpy
+#from expresso.libs.serial_device import SerialDevice
 
 ARRAY_SZ = 768
 NUM_CHANNELS = 5
@@ -440,10 +441,3 @@ if __name__ == '__main__':
             print('saving norm const to flash for chan {0}'.format(i))
             dev.saveNormConstToFlash(i)
             time.sleep(0.5)
-
-
-
-
-
-
-
