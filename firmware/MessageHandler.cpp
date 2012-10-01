@@ -243,9 +243,23 @@ void MessageHandler::getPixelData() {
 }
 
 void MessageHandler::getWorkingBuffer() {
-    // NOT DONE 
-    SerialUSB << rspSuccess << endl;
-    sendWorkingBuffer();
+    uint16 mode;
+    uint8 channel;
+
+    mode = systemState.getMode();
+    channel = systemState.getChannel();
+
+    if (mode == sysModeDebug) {
+
+        SerialUSB << rspSuccess << " "; 
+        SerialUSB << systemState.getLevel(channel); 
+        SerialUSB << endl;
+
+        // Send pixel data as raw bytes
+        sendWorkingBuffer();
+        return;
+    }
+    SerialUSB << rspError << endl;
     return;
 }
 

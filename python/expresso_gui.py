@@ -10,7 +10,6 @@ import array_reader
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from optical_sensor_gui_ui import Ui_MainWindow 
-from lowpass_filter import LowpassFilter
 from hdf5_logger import HDF5_Logger
 
 # Constants
@@ -20,6 +19,7 @@ LOWPASS_FREQ_CUTOFF = 0.5
 MM2NL = 5.0e3/54.8
 PIXEL2MM = 63.5e-3
 AIN_MAX_VOLT= 3.3
+MAX_PIXEL = 768
 PIXEL_TO_VOLT = AIN_MAX_VOLT/float(255)
 CAPILLARY_VOLUME = PIXEL2MM*MM2NL*array_reader.ARRAY_SZ
 LOG_FILE_EXT = '.hdf5'
@@ -93,12 +93,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             
         # Set Enabled state of widgets for startup.
         self.setWidgetEnabledOnDisconnect()
-
-        # Setup lowpass filters
-        self.lowpassFilter = []
-        for chan in range(array_reader.NUM_CHANNELS):
-            self.lowpassFilter.append(LowpassFilter(LOWPASS_FREQ_CUTOFF))
-        self.tLast = None
 
         # Setup log file information
         self.userHome = os.getenv('USERPROFILE')
@@ -208,7 +202,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def channelRadioButtonClicked_Callback(self):
         chan = self.getCheckedChannelRadioButton()
         self.dev.setChannel(chan-1)
-        self.lowpassFilter[chan-1].value = None 
         self.tLast = None
 
     def singleChannelStart_Callback(self):
@@ -232,7 +225,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             # from single sensor
             self.dev.setModeSingleChannel()
             chan = self.getCheckedChannelRadioButton()
-            self.lowpassFilter[chan-1].value = None 
             self.tLast = None
             self.singleChannelPixelWidget.setEnabled(True)
             self.singleChannelLevelWidget.setEnabled(True)
@@ -267,14 +259,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         for it to respond. Not a high priority at the moment as it works well
         enought to suit its purpose.
         """
-        # Get dt for lowpass filter
-        t = time.time()
-        if self.tLast is not None:
-            dt = t - self.tLast
-        else:
-            dt = 0.0
-        self.tLast = t
-
         # Get fluid level and pixel data
         try:
             pixelLevel, data = self.dev.getPixelData()
@@ -283,10 +267,8 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         fluidLevel = self.pixelToFluidLevel(pixelLevel)
         data = self.analogInputToVolt(data)
 
-        # Lowpass filter fluid level
+        # Fluid level
         chan = self.getCheckedChannelRadioButton()
-        self.lowpassFilter[chan-1].update(fluidLevel,dt)
-        fluidLevelLowpass = self.lowpassFilter[chan-1].value
 
         # Plot pixel data
         self.pixelPlot.set_data(self.pixelPosArray,data)
@@ -295,11 +277,10 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         if pixelLevel >= 0:
             pixelLevel = int(pixelLevel)
             fluidLevel = int(fluidLevel)
-            fluidLevelLowpass = int(fluidLevelLowpass)
             self.levelPlot.set_xdata([pixelLevel])
             self.levelPlot.set_ydata([data[pixelLevel]])
             self.levelPlot.set_visible(True)
-            self.setSingleChanProgressBar(fluidLevelLowpass)
+            self.setSingleChanProgressBar(fluidLevel)
         else:
             self.levelPlot.set_visible(False)
             self.clearSingleChanProgressBar()
@@ -339,10 +320,6 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.multiChannelStart.setText('Stop')
             self.statusbar.showMessage('Connected, Mode = Multi Channel')
             self.multiChannelState = 'cmd'
-            # Initialize lowpass filters
-            for i in range(array_reader.NUM_CHANNELS):
-                self.lowpassFilter[i].value = None
-            self.tLast = None
             self.tStart = time.time()
             self.timerMultiChannel.start()
 
@@ -405,24 +382,20 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             except AttributeError, e:
                 return
             self.multiChannelState = 'cmd'
-            fluidLevelList = map(self.pixelToFluidLevel, pixelLevelList)
 
-            if self.tLast is not None:
-                dt = t - self.tLast
-            else:
-                dt = 0.0
-            self.tLast = t
+            fluidLevelList = []
+            for pixelLevel in pixelLevelList:
+                if pixelLevel>=0:
+                    fluidLevel = self.pixelToFluidLevel(pixelLevel)
+                else:
+                    fluidLevel = pixelLevel
+                fluidLevelList.append(fluidLevel)
 
-            # Lowpass filter fluid levels and update progress bars
-            fluidLevelLowpassList = []
-            if fluidLevelList is None:
+            if len(fluidLevelList) == 0:
                 fluidLevelList = [-1 for i in range(array_reader.NUM_CHANNELS)]
             for i, fluidLevel in enumerate(fluidLevelList):
-                self.lowpassFilter[i].update(fluidLevel,dt)
-                fluidLevelLowpass = self.lowpassFilter[i].value
-                fluidLevelLowpassList.append(fluidLevelLowpass)
                 if fluidLevel >= 0: 
-                    self.setMultiChanProgressBar(i+1,fluidLevelLowpass)
+                    self.setMultiChanProgressBar(i+1,fluidLevel)
                 else: 
                     self.clearMultiChanProgressBar(i+1)
 
@@ -430,9 +403,9 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             deviceName = 'device_1'
             if self.loggingCheckBox.isChecked():
                 self.logger.add_dataset_value('/sample_t',tRun) 
-                for i, level in enumerate(fluidLevelLowpassList):
-                    if level < 0:
-                        level = numpy.nan
+                for i, level in enumerate(fluidLevelList):
+                    #if level < 0:
+                        #level = numpy.nan
                     dsetName = '/{0}/channel_{1}'.format(deviceName,i+1)
                     self.logger.add_dataset_value(dsetName,level)
 
@@ -462,7 +435,7 @@ class OpticalSensorMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         """
         Converts the level from pixel position to fluid level in nl.
         """
-        return pixelLevel*MM2NL*PIXEL2MM
+        return (MAX_PIXEL-pixelLevel)*MM2NL*PIXEL2MM
 
     def analogInputToVolt(self,data):
         """

@@ -25,6 +25,8 @@ class SystemState {
         uint16 mode;                     // Operating mode
         uint8 channel;                   // Channel setting for single channel operation
         float level[constants::NUM_AIN]; // Capillary level data
+        float levelRaw[constants::NUM_AIN]; 
+        float lastLevel;
         int32 bounds[constants::NUM_AIN][2]; // Debug data (bounds for level detection)
         LevelDetector detector;     // Level detector object  
 };

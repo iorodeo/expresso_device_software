@@ -12,6 +12,7 @@ SystemState::SystemState() {
     channel = 0;
     for (uint8 i=0; i<constants::NUM_AIN; i++) {
         level[i] = levelNotFound; 
+        levelRaw[i] = levelNotFound;
     }
 }
 
@@ -66,6 +67,13 @@ float SystemState::getLevel(uint8 chan) {
 void SystemState::setLevel(uint8 chan, float value) {
     if (chan < constants::NUM_AIN) {
         level[chan] = value;
+        //if (fabs(levelRaw[chan] - value) < constants::levelMaxChange) {
+            //level[chan] = value;
+        //}
+        //else {
+            //level[chan] = levelNotFound;
+        //}
+        //levelRaw[chan] = value;
     }
 } 
 
@@ -84,26 +92,31 @@ void SystemState::getBounds(uint8 chan, int32* a, int32* b) {
 } 
 
 void SystemState::update() {
+    float levelTemp;
+    float lastLevel;
     linearArray.readData();
     switch (mode) {
         case sysModeSingleChannel:
             // Find level only for one channel
-            level[channel] = detector.findLevel(linearArray.buffer[channel]);
-            systemState.setLevel(channel,level[channel]);
+            lastLevel = level[channel];
+            levelTemp = detector.findLevel(linearArray.buffer[channel],&lastLevel);
+            setLevel(channel, levelTemp); // special setter - handles levelMaxChange
             break;
         case sysModeAllChannels:
             // Find level for all channels
             for (uint8 i=0; i<constants::NUM_AIN; i++) {
-                level[i] = detector.findLevel(linearArray.buffer[i]);
-                systemState.setLevel(i,level[i]);
+                lastLevel = level[i];
+                levelTemp = detector.findLevel(linearArray.buffer[i],&lastLevel);
+                setLevel(i, levelTemp);  // special setter - handles levelMaxChange
             }   
             break;
         case sysModeDebug:
             int32 a;
             int32 b;
-            level[channel] = detector.findLevel(linearArray.buffer[channel],&a,&b);
-            systemState.setLevel(channel,level[channel]);
-            systemState.setBounds(channel,a,b);
+            lastLevel = level[channel];
+            levelTemp = detector.findLevel(linearArray.buffer[channel],&a,&b,&lastLevel);
+            setLevel(channel, levelTemp);  // special setter - handles levelMaxChange
+            setBounds(channel,a,b);
         default:
             break;
     }  

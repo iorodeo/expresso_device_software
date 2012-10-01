@@ -18,8 +18,6 @@ class DerivFilter {
         void setThreshold(uint16 x_val,uint16 y_val);
         uint16* getThreshold();
     private:
-        uint16 maxValueX;
-        uint16 maxValueY;
         uint16 threshold[2];
         uint8 shift;
         uint8 scale;

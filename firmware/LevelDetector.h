@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "MedianFilter.h"
 #include "DerivFilter.h"
+#include "LowpassFilter.h"
 
 const extern float levelNotFound;
 const extern float levelChanError;
@@ -20,8 +21,8 @@ class LevelDetector {
         bool reverseBuffer;
         uint8 workBuffer[constants::NUM_PIXEL];
         LevelDetector();
-        float findLevel(uint8 *data);
-        float findLevel(uint8 *data, int32* a, int32* b);
+        float findLevel(uint8 *data, float *lastLevel);
+        float findLevel(uint8 *data, int32* a, int32* b, float *lastLevel);
         int32 indNeg;
         int32 indPos;
     private:
@@ -32,6 +33,7 @@ class LevelDetector {
         float peakFitTol;
         MedianFilter medianFilter;
         DerivFilter derivFilter;
+        LowpassFilter lowpassFilter;
         uint8 findRefLevel();
 };
 

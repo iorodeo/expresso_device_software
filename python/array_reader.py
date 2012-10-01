@@ -194,6 +194,8 @@ class ArrayReader(serial.Serial):
         line=self.readline()
         if not line.startswith(SUCCESS_CHR):
             raise IOError, 'unable to read pixel data'
+        line = line.split()
+        level = float(line[1])
 
         data = []
         errorCnt = 0
@@ -205,7 +207,7 @@ class ArrayReader(serial.Serial):
                 errorCnt += 1
             if errorCnt >= MAX_ERROR_CNT:
                 raise IOError, 'error reading pixel values'
-        return numpy.array(data)
+        return level, numpy.array(data)
 
     def getLevel(self,chan=None):
         """

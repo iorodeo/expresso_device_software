@@ -15,11 +15,16 @@ namespace constants {
     const uint8 normScaleFact[2] = {3,2};
 
     // Level detector constants
-    const uint8 thresholdDelta = 25; 
     const uint16 refLevelSampleNum = 20;
+    const uint8 refLevel = 128; 
     const bool reverseBuffer = false;
     const uint16 maxSearchPixel = NUM_PIXEL-167;
     const float peakFitTol = 0.25;
+    const uint8 thresholdDeltaLow = 15; 
+    const uint8 thresholdDeltaHigh = 28; 
+    const int32 thresholdSymm = 15;
+    const float lowerThresholdFraction = 0.95;
+    const float levelMaxChange = 50.0;
 
     // Median filter constants
     const uint16 medianFilterWindow = 25; 
@@ -28,6 +33,9 @@ namespace constants {
     const uint16 derivFilterWindow = 21; 
     const uint8 derivFilterShift = 128;
     const uint8 derivFilterScale = 10;
+
+    // Lowpass filter constants
+    const int32 cutoff_freq = 10;
 
     // Device Id
     const uint16 deviceId = 1;

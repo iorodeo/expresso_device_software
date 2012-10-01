@@ -26,20 +26,21 @@ LevelDetector::LevelDetector() {
     derivFilter.setShift(constants::derivFilterShift);
 }
 
-float LevelDetector::findLevel(uint8 *dataBuffer, int32* a, int32* b) {
+float LevelDetector::findLevel(uint8 *dataBuffer, int32* a, int32* b, float *lastLevel) {
     float level;
-    uint8* thresholds;
+    uint16* threshold;
 
-    level = findLevel(dataBuffer);
+    level = findLevel(dataBuffer, lastLevel);
     *a = indNeg;
     *b = indPos;
-    //thresholds = derivFilter.getThreshold();
-    //*a = (int32) thresholds[0];
-    //*b = (int32) thresholds[1];
+    //threshold = derivFilter.getThreshold();
+    //*a = (int32) threshold[0];
+    //*a = (int32) findRefLevel();
+    //*b = (int32) threshold[1];
     return level;
 }
 
-float LevelDetector::findLevel(uint8 *dataBuffer) {
+float LevelDetector::findLevel(uint8 *dataBuffer,float *lastLevel) {
     bool found;
     int32 indBegin;
     uint8 refLevel;
@@ -48,6 +49,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     float peakFit;
     float level;
     uint16* threshold;
+    uint8 thresholdDelta;
 
     // Copy data buffer and apply median and derivative filters
     if (!reverseBuffer) {
@@ -60,35 +62,39 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
     }
     medianFilter.apply(workBuffer,numPixel);
     derivFilter.apply(workBuffer,numPixel);
+    lowpassFilter.apply(workBuffer,numPixel);
 
+    // The derivFilter object returns the x,y values
+    // of the maximum within the searchable region of the 
+    // data.  Note: whereas the deriFilter is applied to the
+    // entire workBuffer, the search for a max value only 
+    // takes place within the searchable region. 
     threshold = derivFilter.getThreshold();
 
-    upperThreshold = (uint8) (.95*threshold[1]);
-    lowerThreshold = (uint8) (.90*threshold[1]);
+    upperThreshold = (uint8) threshold[1];
+    lowerThreshold = (uint8) (constants::lowerThresholdFraction*threshold[1]);
 
     // Find reference level
-    refLevel = findRefLevel();
+    refLevel = constants::refLevel;
+    
+    // Compare the upperThreshold to the (baseline) refLevel.
+    // If below some arbitrary threshold, cannot find level.
+    //
+    // Adding hysteresis to this check.
+    //
+    //if (*lastLevel == levelNotFound) {
+    if (*lastLevel < 0) {
+        thresholdDelta = constants::thresholdDeltaHigh;
+    } else {
+        thresholdDelta = constants::thresholdDeltaLow;
+    }
 
-    if ((upperThreshold - refLevel) < constants::thresholdDelta) {
+    if ((upperThreshold - refLevel) < thresholdDelta) {
         return levelNotFound;
     }
 
-    // Find index first data point > upper threshold. This index 
-    // (indBegin) will be used to as the starting place for forward
-    // and backward searches for data points < lower threshold.
-    //indBegin = 0;
-    //found = false;
-    //while ((!found) && (indBegin < maxSearchPixel)) {
-        //if (workBuffer[indBegin] > (upperThreshold)) {
-            //found = true;
-        //}
-        //else {
-            //indBegin++;
-        //}
-    //}
-    //if (!found) {
-        //return levelNotFound;
-    //}
+    // Index corresponds to the x value of the upperThreshold as 
+    // found in the derivative data.
     indBegin = threshold[0];
 
     // Search backward until the first data point less than the lower 
@@ -104,14 +110,14 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
         }
     }
     if (!found) {
-        return levelNotFound;
+        return levelNotFound-1;
     }
 
     // Search forward until the first data point less than the lower 
     // threshold.
     indPos = indBegin;
     found = false;
-    while ((!found) && (indPos < maxSearchPixel)) {
+    while ((!found) && (indPos < (constants::NUM_PIXEL-1))) {
         if (workBuffer[indPos] < (lowerThreshold)) {
             found = true;
         }
@@ -120,11 +126,16 @@ float LevelDetector::findLevel(uint8 *dataBuffer) {
         }
     }
     if (!found) {
-        return levelNotFound;
+        return levelNotFound-2;
     }
 
+    // Symmetry check for indexes
+    //if (abs(indPos-2*indBegin+indNeg)>constants::thresholdSymm) {
+        //return levelNotFound-3;    
+    //}
+
     // Compute the mid point, delta and fit the peak with a quadratic
-    midPoint = (float) (indNeg/2 + indPos/2);
+    midPoint = 0.5*(float)(indNeg) + 0.5*(float)(indPos);
     //indDelta = (float) (indPos - indNeg);
     //peakFit = findPeak((uint16) indNeg, workBuffer+indNeg, indPos-indNeg+1);
 

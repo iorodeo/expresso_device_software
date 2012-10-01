@@ -1,37 +1,39 @@
+import sys,re
 import matplotlib
-matplotlib.use('GtkAgg')
 import pylab
 import numpy as np
-import sys
-import time
 
-with open('debug_data.txt','r') as f:
-    lines = f.readlines()
-upper = []
-lower = []
-t_sec = []
+with open('debug_data.txt') as f:
+    data = f.readlines()
+
+deriv_data = []
+time = []
 level = []
-for line in lines:
-    data_list = line.split(' ')
-    t = time.strptime(data_list[1],'%H:%M:%S')
-    t = time.mktime(t)
-    t_sec.append(t)
-    level.append(float(data_list[2]))
-    lower.append((int(data_list[3]),int(data_list[4])))
-    upper.append((int(data_list[5]),int(data_list[6]))) 
+deriv_data_line = []
+level_plot = []
+cnt = 0
+level_comp = 0
+for datum in data:
+    line = datum.split(' ')
+    if re.search('2012',line[0]):
+        if (len(deriv_data_line) > 0) and (level[-1]!=level_comp):
+            level_comp = level[-1]
+            y = np.array(deriv_data_line)
+            pylab.subplot(211)
+            pylab.plot(deriv_data_line)
+            deriv_data_line = []
+            level_plot.append(level_comp)
+            cnt+=1
+        time.append(' '.join(line[0:1]))
+        level.append(line[2])
+        line = (' '.join(line[3:]).replace('[','')).strip()
+        deriv_data_line = line.split()
+    else:
+        line = (' '.join(line[1:]).replace(']','')).strip()
+        deriv_data_line.extend(line.split())
+    if cnt > 5:
+        break
 
-lower = np.array(lower)
-upper = np.array(upper)
-level = np.array(level)
-t_sec = np.array(t_sec)
-
-mid_point = np.mean(np.array([lower[:,0],upper[:,0]]),axis=0)
-
-#pylab.plot(t_sec-t_sec[0],level,'r.')
-pylab.plot(t_sec-t_sec[0],mid_point,'b.')
-ax = pylab.gca()
-ax.set_ylim([190,220])
-
-pylab.xlabel('time (s)')
-pylab.grid(True)
+pylab.subplot(212)
+pylab.plot(level_plot,'ro')
 pylab.show()

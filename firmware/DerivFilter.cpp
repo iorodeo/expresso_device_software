@@ -12,8 +12,6 @@ DerivFilter::DerivFilter(uint16 _windowLen, uint8 _scale, uint8 _shift) {
     shift = _shift;
     scale = _scale;
     setWindowLen(_windowLen);
-    maxValueX = 0;
-    maxValueY = 0;
 }
 
 void DerivFilter::setWindowLen(uint16 _windowLen) {
@@ -39,6 +37,8 @@ uint16* DerivFilter::getThreshold() {
 void DerivFilter::apply(uint8 *data, uint16 len) {
     int32 kNeg;
     int32 kPos;
+    uint16 maxValueX = 0;
+    uint16 maxValueY = 0;
     uint16 n = windowLen/2;
     uint8 dataFilt[len];
     float value;
@@ -58,9 +58,12 @@ void DerivFilter::apply(uint8 *data, uint16 len) {
         }
         dataFilt[i] = (uint8) value;
 
-        if (value > maxValueY) {
-            maxValueY = (uint16) value;
-            maxValueX = i;
+        // Search for the max if the index is in the searchable region.
+        if (i < constants::maxSearchPixel) {
+            if (value > maxValueY) {
+                maxValueY = (uint16) value;
+                maxValueX = i;
+            }
         }
     }
     setThreshold(maxValueX,maxValueY);

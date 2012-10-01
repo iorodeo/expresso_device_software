@@ -21,11 +21,16 @@ namespace constants {
     extern const uint8 normScaleFact[2];
 
     // Level detector constants
-    extern const uint8 thresholdDelta; 
     extern const uint16 refLevelSampleNum;
+    extern const uint8 refLevel; 
     extern const bool reverseBuffer; 
     extern const uint16 maxSearchPixel;
     extern const float peakFitTol;
+    extern const uint8 thresholdDeltaLow; 
+    extern const uint8 thresholdDeltaHigh; 
+    extern const int32 thresholdSymm; 
+    extern const float lowerThresholdFraction;
+    extern const float levelMaxChange;
 
     // Median filter constants
     extern const uint16 medianFilterWindow; 
@@ -34,6 +39,9 @@ namespace constants {
     extern const uint16 derivFilterWindow; 
     extern const uint8 derivFilterShift;
     extern const uint8 derivFilterScale;
+
+    // Lowpass filter constants
+    extern const int32 cutoff_freq;
 
     extern const uint16 deviceId;
 }
