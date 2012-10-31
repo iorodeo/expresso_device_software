@@ -6,17 +6,30 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>712</width>
-    <height>677</height>
+    <width>613</width>
+    <height>605</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Arial</family>
+   </font>
+  </property>
   <property name="windowTitle">
-   <string>Expresso Capillary Sensor</string>
+   <string>Expresso Data Acquisition</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_9">
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="font">
+       <font>
+        <family>Arial</family>
+       </font>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -24,7 +37,118 @@
        <attribute name="title">
         <string>Device Manager</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_8">
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <family>Arial</family>
+            <pointsize>14</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Welcome!</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="widget_12" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <spacer name="horizontalSpacer_13">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="scanPushButton">
+             <property name="font">
+              <font>
+               <family>Arial</family>
+              </font>
+             </property>
+             <property name="text">
+              <string>Find My Devices</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_14">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+          <zorder>scanPushButton</zorder>
+          <zorder>plainTextEdit</zorder>
+          <zorder>horizontalSpacer_13</zorder>
+          <zorder>horizontalSpacer_14</zorder>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="devWidgetContainer" native="true">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="font">
+           <font>
+            <family>Arial</family>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_8">
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="font">
+              <font>
+               <family>Arial</family>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Expresso Devices</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="devWidget" native="true">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <layout class="QVBoxLayout" name="devWidgetVLay"/>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
         <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
@@ -500,8 +624,8 @@
                    <rect>
                     <x>0</x>
                     <y>0</y>
-                    <width>630</width>
-                    <height>394</height>
+                    <width>518</width>
+                    <height>382</height>
                    </rect>
                   </property>
                   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -1032,7 +1156,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>712</width>
+     <width>613</width>
      <height>26</height>
     </rect>
    </property>

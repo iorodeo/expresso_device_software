@@ -12,6 +12,7 @@ from expresso.libs.expresso_serial import ExpressoSerial
 from expresso_gui_ui import Ui_MainWindow 
 from hdf5_logger import HDF5_Logger
 from subprocess import Popen,PIPE
+import functools
 
 # Constants
 TIMER_SINGLE_INTERVAL_MS =  333 
@@ -65,13 +66,19 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         # Actions for widgets on the multi channel mode tab
         self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
         self.setLogFileToolButton.clicked.connect(self.setLogFile_Callback)
+        self.scanPushButton.clicked.connect(self.scanDev_Callback)
 
+    def scanDev_Callback(self):
+        self.createPortWidgets(self.portList,self.portList)
+        self.devWidgetContainer.setEnabled(True)
 
-    def createPortWidgets(self,portList):
-        for port in portList:
+    def createPortWidgets(self,portList, devIDList):
+        self.connectPushButton = {}
+        for port,devID in zip(portList,devIDList):
             container = QtGui.QWidget(self.deviceTab)
             container.setObjectName("widget-"+port)
-            self.verticalLayout_8.addWidget(container)
+            spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+            self.devWidgetVLay.addWidget(container)
             label = QtGui.QLabel(container)
             font = QtGui.QFont()
             font.setBold(True)
@@ -82,17 +89,32 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             horLayout = QtGui.QHBoxLayout(container)
             horLayout.setMargin(0)
             horLayout.setObjectName("horizontalLayout-"+port)
+            horLayout.addItem(spacerItem)
             horLayout.addWidget(label)
-            portLineEdit = QtGui.QLineEdit(container)
-            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+            lineEdit = QtGui.QLineEdit(container)
+            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
             sizePolicy.setHorizontalStretch(0)
             sizePolicy.setVerticalStretch(0)
-            sizePolicy.setHeightForWidth(portLineEdit.sizePolicy().hasHeightForWidth())
-            portLineEdit.setSizePolicy(sizePolicy)
-            portLineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
-            portLineEdit.setObjectName("portLineEdit-"+port)
-            portLineEdit.setText(port)
-            horLayout.addWidget(portLineEdit)
+            sizePolicy.setHeightForWidth(lineEdit.sizePolicy().hasHeightForWidth())
+            lineEdit.setSizePolicy(sizePolicy)
+            lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+            lineEdit.setObjectName("portLineEdit-"+port)
+            lineEdit.setText(port)
+            lineEdit.setReadOnly(True)
+            horLayout.addWidget(lineEdit)
+            horLayout.addItem(spacerItem)
+            label = QtGui.QLabel(container)
+            label.setFont(font)
+            label.setText(QtGui.QApplication.translate("MainWindow", "Device ID", None, QtGui.QApplication.UnicodeUTF8))
+            label.setObjectName("label-"+devID)
+            horLayout.addWidget(label)
+            lineEdit = QtGui.QLineEdit(container)
+            lineEdit.setSizePolicy(sizePolicy)
+            lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+            lineEdit.setObjectName("devIDLineEdit-"+devID)
+            lineEdit.setText(devID)
+            lineEdit.setReadOnly(True)
+            horLayout.addWidget(lineEdit)
             connectPushButton = QtGui.QPushButton(container)
             sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
             sizePolicy.setHorizontalStretch(0)
@@ -102,32 +124,32 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             connectPushButton.setText(QtGui.QApplication.translate("MainWindow", "Connect", None, QtGui.QApplication.UnicodeUTF8))
             connectPushButton.setObjectName("connectPushButton-"+port)
             horLayout.addWidget(connectPushButton)
-            spacerItem = QtGui.QSpacerItem(114, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+            spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
             horLayout.addItem(spacerItem)
             self.singleChannelDeviceComboBox.addItem(port)
 
-            # Device Manager tab
-            #self.portLineEdit.editingFinished.connect(self.portLineEditFinished_Callback)
-            #self.connectPushButton.pressed.connect(self.connectPressed_Callback)
-            #self.connectPushButton.clicked.connect(self.connectClicked_Callback)
-        spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.verticalLayout_8.addItem(spacerItem)
+            self.connectPushButton[port]  = connectPushButton
 
+            pressedCallback = functools.partial(self.connectPressed_Callback,port)
+            connectPushButton.pressed.connect(pressedCallback)
+            clickedCallback = functools.partial(self.connectClicked_Callback,port)
+            connectPushButton.clicked.connect(clickedCallback)
 
     def initialize(self):
         self.dev = None
         # Set default com port
         osType = platform.system()
+        self.portList = []
         if osType == 'Linux': 
             self.port = '/dev/ACM0'
             p1 = Popen(["ls","/dev"], stdout=PIPE)
             p2 = Popen(["grep","-E","ACM|USB"], stdin=p1.stdout, stdout=PIPE)
             p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
             output = p2.communicate()[0]            
-            self.portList = output.split()
+            for port in output.split():
+                self.portList.append("/dev/"+port);
         else: 
             self.port = 'com1'
-        self.createPortWidgets(self.portList)
         
         self.channelRadioButton_1.setChecked(True)
         self.statusbar.showMessage('Not Connected')
@@ -172,25 +194,23 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def portLineEditFinished_Callback(self):
         self.port = str(self.portLineEdit.text())
 
-    def connectPressed_Callback(self):
+    def connectPressed_Callback(self,port):
         if self.dev == None:
-            self.connectPushButton.setText('Disconnect')
-            #self.portLineEdit.setEnabled(False)
+            self.connectPushButton[port].setText('Disconnect')
             self.statusbar.showMessage('Connecting ... ')
 
-    def connectClicked_Callback(self):
+    def connectClicked_Callback(self,port):
         if self.dev == None:
             try:
-                self.dev = ExpressoSerial(self.port)
+                self.dev = ExpressoSerial(port)
                 connected = True
             except Exception, e:
                 QtGui.QMessageBox.critical(self,'Error', str(e))
-                self.connectPushButton.setText('Connect')
+                self.connectPushButton[port].setText('Connect')
                 self.statusbar.showMessage('Not Connected')
-                #self.portLineEdit.setEnabled(True)
                 connected = False
         else:
-            self.connectPushButton.setText('Connect')
+            self.connectPushButton[port].setText('Connect')
             try:
                 self.cleanUpAndCloseDevice()
             except Exception, e:
