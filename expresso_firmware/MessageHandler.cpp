@@ -8,7 +8,7 @@ const int cmdGetLevel = 3;
 const int cmdGetLevels = 4;
 const int cmdGetPixelData = 5;
 const int cmdGetWorkingBuffer = 6;
-const int cmdGetDeviceId = 7;
+const int cmdGetDeviceID = 7;
 const int cmdGetDeviceNumber =8;
 const int cmdSetDeviceNumber = 9;
 const int cmdUnSetNormConst = 10;
@@ -17,6 +17,7 @@ const int cmdSetNormConstFromFlash = 12;
 const int cmdSetChannel = 13;
 const int cmdSaveNormConstToFlash=14;
 const int cmdGetBoundData = 15;
+const int cmdSetDeviceID = 16;
 
 // Serial Response ids 
 const int rspSuccess = 0;
@@ -78,8 +79,12 @@ void MessageHandler::msgSwitchYard() {
             getWorkingBuffer();
             break;
 
-        case cmdGetDeviceId:
-            getDeviceId();
+        case cmdGetDeviceID:
+            getDeviceID();
+            break;
+
+        case cmdSetDeviceID:
+            setDeviceID();
             break;
 
         case cmdGetDeviceNumber:
@@ -263,22 +268,6 @@ void MessageHandler::getWorkingBuffer() {
     return;
 }
 
-void MessageHandler::getDeviceId() {
-    SerialUSB << rspSuccess << " ";
-    SerialUSB << constants::deviceId << endl;
-    return;
-}
-
-void MessageHandler::getDeviceNumber() {
-    // NOT DONE
-    return;
-}
-
-void MessageHandler::setDeviceNumber() {
-    // NOT DONE
-    return;
-}
-
 void MessageHandler::unSetNormConst() {
     uint8 chan;
     if (numberOfItems()==2) {
@@ -332,6 +321,42 @@ void MessageHandler::saveNormConstToFlash() {
         }
     }
     SerialUSB << rspError << endl;
+    return;
+}
+
+void MessageHandler::setDeviceID() {
+    uint16 deviceID;
+    if (numberOfItems()==2) {
+        deviceID = (uint16) readInt(1);
+        linearArray.setDeviceID(deviceID);
+        SerialUSB << rspSuccess << endl;
+        return;
+    }
+    SerialUSB << rspError << endl;
+    return;
+}
+
+void MessageHandler::getDeviceID() {
+    uint16 deviceID = linearArray.getDeviceID();
+    SerialUSB << rspSuccess << " " << deviceID << endl;
+    return;
+}
+
+void MessageHandler::setDeviceNumber() {
+    uint8 deviceNum;
+    if (numberOfItems()==2) {
+        deviceNum = (uint8) readInt(1);
+        systemState.setDeviceNumber(deviceNum);
+        SerialUSB << rspSuccess << endl;
+        return;
+    }
+    SerialUSB << rspError << endl;
+    return;
+}
+
+void MessageHandler::getDeviceNumber() {
+    uint16 deviceNum = systemState.getDeviceNumber();
+    SerialUSB << rspSuccess << " " << deviceNum << endl;
     return;
 }
 

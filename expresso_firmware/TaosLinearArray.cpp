@@ -190,6 +190,25 @@ void TaosLinearArray::saveNormConstToFlash(uint8 chanNum) {
     }
 } 
 
+void TaosLinearArray::setDeviceID(uint16 deviceID) {
+    uint8 pageNum = numAin;
+    if (pageNum < flashMemory.numPages) {
+        flashMemory.erasePage(pageNum);
+        uint8 id_lsb = (uint8) (deviceID&&0xFF);
+        uint8 id_msb = (uint8) (deviceID>>8);
+        flashMemory.writeData(pageNum,0,id_lsb,id_msb);
+    }
+}
+ 
+uint16 TaosLinearArray::getDeviceID() {
+    uint8 pageNum = numAin;
+    uint8 id_lsb;
+    uint8 id_msb;
+    flashMemory.readData(pageNum,0,id_lsb,id_msb);
+    _deviceID = (uint16) (id_lsb|(id_msb<<8));
+    return _deviceID;
+}
+
 void TaosLinearArray::startDataRead() {
     // Sets the start signal which signals that data should be read into
     // the sensor buffer.

@@ -47,7 +47,11 @@ class TaosLinearArray {
         friend void timerInterrupt2ndQtr();
         friend void timerInterrupt3rdQtr();
 
+        void setDeviceID(uint16 deviceID);
+        uint16 getDeviceID();
+        
     private:
+        uint16 _deviceID;
 
         volatile bool startSignal;
         volatile bool readInProgress;

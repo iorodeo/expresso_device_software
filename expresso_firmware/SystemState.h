@@ -20,8 +20,11 @@ class SystemState {
         void getBounds(uint8 chan, int32* a, int32* b);
         void setBounds(uint8 chan, int32 a, int32 b);
         void setLevel(uint8 chan, float value); 
+        bool setDeviceNumber(uint8 deviceNum); 
+        uint8 getDeviceNumber(); 
         void update();
-    //private:
+
+        uint8 deviceNum;
         uint16 mode;                     // Operating mode
         uint8 channel;                   // Channel setting for single channel operation
         float level[constants::NUM_AIN]; // Capillary level data

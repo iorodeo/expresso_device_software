@@ -8,11 +8,10 @@ import math
 import platform
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-#import ray_reader
-#from optical_sensor_gui_ui import Ui_MainWindow 
-from expresso.libs.expresso_serial import ArrayReader
+from expresso.libs.expresso_serial import ExpressoSerial
 from expresso_gui_ui import Ui_MainWindow 
 from hdf5_logger import HDF5_Logger
+from subprocess import Popen,PIPE
 
 # Constants
 TIMER_SINGLE_INTERVAL_MS =  333 
@@ -53,11 +52,6 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.dev = None
         
     def connectActions(self):
-        # Device Manager tab
-        self.portLineEdit.editingFinished.connect(self.portLineEditFinished_Callback)
-        self.connectPushButton.pressed.connect(self.connectPressed_Callback)
-        self.connectPushButton.clicked.connect(self.connectClicked_Callback)
-
         # Actions for widgets on the single channel tab
         for chan in range(1,NUM_CHANNELS+1):
             radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
@@ -72,19 +66,71 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
         self.setLogFileToolButton.clicked.connect(self.setLogFile_Callback)
 
+
+    def createPortWidgets(self,portList):
+        for port in portList:
+            container = QtGui.QWidget(self.deviceTab)
+            container.setObjectName("widget-"+port)
+            self.verticalLayout_8.addWidget(container)
+            label = QtGui.QLabel(container)
+            font = QtGui.QFont()
+            font.setBold(True)
+            font.setWeight(75)
+            label.setFont(font)
+            label.setText(QtGui.QApplication.translate("MainWindow", "Port", None, QtGui.QApplication.UnicodeUTF8))
+            label.setObjectName("label-"+port)
+            horLayout = QtGui.QHBoxLayout(container)
+            horLayout.setMargin(0)
+            horLayout.setObjectName("horizontalLayout-"+port)
+            horLayout.addWidget(label)
+            portLineEdit = QtGui.QLineEdit(container)
+            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(portLineEdit.sizePolicy().hasHeightForWidth())
+            portLineEdit.setSizePolicy(sizePolicy)
+            portLineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+            portLineEdit.setObjectName("portLineEdit-"+port)
+            portLineEdit.setText(port)
+            horLayout.addWidget(portLineEdit)
+            connectPushButton = QtGui.QPushButton(container)
+            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(connectPushButton.sizePolicy().hasHeightForWidth())
+            connectPushButton.setSizePolicy(sizePolicy)
+            connectPushButton.setText(QtGui.QApplication.translate("MainWindow", "Connect", None, QtGui.QApplication.UnicodeUTF8))
+            connectPushButton.setObjectName("connectPushButton-"+port)
+            horLayout.addWidget(connectPushButton)
+            spacerItem = QtGui.QSpacerItem(114, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+            horLayout.addItem(spacerItem)
+            self.singleChannelDeviceComboBox.addItem(port)
+
+            # Device Manager tab
+            #self.portLineEdit.editingFinished.connect(self.portLineEditFinished_Callback)
+            #self.connectPushButton.pressed.connect(self.connectPressed_Callback)
+            #self.connectPushButton.clicked.connect(self.connectClicked_Callback)
+        spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        self.verticalLayout_8.addItem(spacerItem)
+
+
     def initialize(self):
         self.dev = None
         # Set default com port
         osType = platform.system()
         if osType == 'Linux': 
-            self.port = '/dev/ttyACM0' 
+            self.port = '/dev/ACM0'
+            p1 = Popen(["ls","/dev"], stdout=PIPE)
+            p2 = Popen(["grep","-E","ACM|USB"], stdin=p1.stdout, stdout=PIPE)
+            p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
+            output = p2.communicate()[0]            
+            self.portList = output.split()
         else: 
             self.port = 'com1'
-        self.portLineEdit.setText(self.port)
-        self.statusbar.showMessage('Not Connected')
-
-        self.singleChannelDeviceComboBox.addItem('Device 1')
+        self.createPortWidgets(self.portList)
+        
         self.channelRadioButton_1.setChecked(True)
+        self.statusbar.showMessage('Not Connected')
 
         # Set progressbar ranges 
         self.setAllProgressBarFont()
@@ -129,19 +175,19 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def connectPressed_Callback(self):
         if self.dev == None:
             self.connectPushButton.setText('Disconnect')
-            self.portLineEdit.setEnabled(False)
+            #self.portLineEdit.setEnabled(False)
             self.statusbar.showMessage('Connecting ... ')
 
     def connectClicked_Callback(self):
         if self.dev == None:
             try:
-                self.dev = ArrayReader(self.port)
+                self.dev = ExpressoSerial(self.port)
                 connected = True
             except Exception, e:
                 QtGui.QMessageBox.critical(self,'Error', str(e))
                 self.connectPushButton.setText('Connect')
                 self.statusbar.showMessage('Not Connected')
-                self.portLineEdit.setEnabled(True)
+                #self.portLineEdit.setEnabled(True)
                 connected = False
         else:
             self.connectPushButton.setText('Connect')
@@ -160,7 +206,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def setWidgetEnabledOnDisconnect(self): 
         self.deviceTab.setEnabled(True)
-        self.portLineEdit.setEnabled(True)
+        #self.portLineEdit.setEnabled(True)
         self.singleChannelTab.setEnabled(False)
         self.multiChannelTab.setEnabled(False)
         self.singleChannelTab.setEnabled(False)

@@ -25,6 +25,7 @@ CMD_SET_NORM_CONST_FROM_FLASH = 12
 CMD_SET_CHANNEL = 13
 CMD_SAVE_NORM_CONST_TO_FLASH=14
 CMD_GET_BOUND_DATA = 15
+CMD_SET_DEVICE_ID = 16
 
 # Operating modes
 MODE_STOPPED = 0
@@ -42,10 +43,10 @@ ALLOWED_CHANNELS = range(0,NUM_CHANNELS)
 
 SUCCESS_CHR = '0' 
 
-class ArrayReader(serial.Serial):
+class ExpressoSerial(serial.Serial):
 
     def __init__(self, port):
-        super(ArrayReader,self).__init__(port, baudrate=3000000, timeout=1)
+        super(ExpressoSerial,self).__init__(port, baudrate=3000000, timeout=1)
         time.sleep(2.0)
         self.emptyBuffer()
 
@@ -331,7 +332,7 @@ class ArrayReader(serial.Serial):
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
 
-    dev = ArrayReader('/dev/ttyACM0')
+    dev = ExpressoSerial('/dev/ttyACM0')
 
     if 0:
         mode = dev.getMode()

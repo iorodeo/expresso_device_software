@@ -1,1 +1,1 @@
-from expresso_serial import ArrayReader
+from expresso_serial import ExpressoSerial

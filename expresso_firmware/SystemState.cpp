@@ -26,6 +26,11 @@ bool SystemState::setMode(uint16 _mode) {
     }
 }
 
+bool SystemState::setDeviceNumber(uint8 _deviceNum) {
+    deviceNum = _deviceNum;
+    return true;
+}
+
 // Overloaded method for handling sysModeSingleChannel
 bool SystemState::setMode(uint16 _mode, uint8 _channel) {
     if (!setMode(_mode)) {
@@ -39,6 +44,10 @@ bool SystemState::setMode(uint16 _mode, uint8 _channel) {
 
 uint16 SystemState::getMode() {
     return mode;
+}
+
+uint8 SystemState::getDeviceNumber() {
+    return deviceNum;
 }
 
 bool SystemState::setChannel(uint8 _channel) {
