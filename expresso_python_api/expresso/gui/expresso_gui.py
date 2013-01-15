@@ -1,4 +1,4 @@
-from __future__ import print_function
+import re
 import os
 import sys
 import functools
@@ -6,13 +6,15 @@ import numpy
 import time
 import math
 import platform
+import functools
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from expresso.libs.expresso_serial import ExpressoSerial
 from expresso_gui_ui import Ui_MainWindow 
 from hdf5_logger import HDF5_Logger
 from subprocess import Popen,PIPE
-import functools
+from serial.tools import list_ports
+from mcwidget import McWidget
 
 # Constants
 TIMER_SINGLE_INTERVAL_MS =  333 
@@ -28,129 +30,20 @@ ARRAY_SZ = 768
 CAPILLARY_VOLUME = PIXEL2MM*MM2NL*ARRAY_SZ
 LOG_FILE_EXT = '.hdf5'
 DEFAULT_LOG_FILE = 'expresso_default_log{0}'.format(LOG_FILE_EXT)
+MAPLE_VENDOR_ID = '1eaf'
 
 class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def __init__(self,parent=None):
         super(ExpressoMainWindow,self).__init__(parent)
         self.setupUi(self)
-        self.connectActions()
         self.initialize()
+        self.connectActions()
         self.setupTimers()
 
-    def main(self):
-        self.show()
-
-    def closeEvent(self,event):
-        if self.dev is not None:
-            self.cleanUpAndCloseDevice()
-        event.accept()
-
-    def cleanUpAndCloseDevice(self):
-        self.dev.setModeStopped()
-        self.dev.setChannel(0)
-        self.dev.close()
-        self.dev = None
-        
-    def connectActions(self):
-        # Actions for widgets on the single channel tab
-        for chan in range(1,NUM_CHANNELS+1):
-            radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
-            radioButton.clicked.connect(self.channelRadioButtonClicked_Callback)
-        self.singleChannelStart.clicked.connect(self.singleChannelStart_Callback)
-        self.clearNormalizationPushButton.clicked.connect(self.clearNormalization_Callback)
-        self.setNormalizationPushButton.clicked.connect(self.setNormalization_Callback)
-        self.saveNormalizationPushButton.clicked.connect(self.saveNormalization_Callback)
-        self.loadNormalizationPushButton.clicked.connect(self.loadNormalization_Callback)
-
-        # Actions for widgets on the multi channel mode tab
-        self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
-        self.setLogFileToolButton.clicked.connect(self.setLogFile_Callback)
-        self.scanPushButton.clicked.connect(self.scanDev_Callback)
-
-    def scanDev_Callback(self):
-        self.createPortWidgets(self.portList,self.portList)
-        self.devWidgetContainer.setEnabled(True)
-
-    def createPortWidgets(self,portList, devIDList):
-        self.connectPushButton = {}
-        for port,devID in zip(portList,devIDList):
-            container = QtGui.QWidget(self.deviceTab)
-            container.setObjectName("widget-"+port)
-            spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-            self.devWidgetVLay.addWidget(container)
-            label = QtGui.QLabel(container)
-            font = QtGui.QFont()
-            font.setBold(True)
-            font.setWeight(75)
-            label.setFont(font)
-            label.setText(QtGui.QApplication.translate("MainWindow", "Port", None, QtGui.QApplication.UnicodeUTF8))
-            label.setObjectName("label-"+port)
-            horLayout = QtGui.QHBoxLayout(container)
-            horLayout.setMargin(0)
-            horLayout.setObjectName("horizontalLayout-"+port)
-            horLayout.addItem(spacerItem)
-            horLayout.addWidget(label)
-            lineEdit = QtGui.QLineEdit(container)
-            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
-            sizePolicy.setHorizontalStretch(0)
-            sizePolicy.setVerticalStretch(0)
-            sizePolicy.setHeightForWidth(lineEdit.sizePolicy().hasHeightForWidth())
-            lineEdit.setSizePolicy(sizePolicy)
-            lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
-            lineEdit.setObjectName("portLineEdit-"+port)
-            lineEdit.setText(port)
-            lineEdit.setReadOnly(True)
-            horLayout.addWidget(lineEdit)
-            horLayout.addItem(spacerItem)
-            label = QtGui.QLabel(container)
-            label.setFont(font)
-            label.setText(QtGui.QApplication.translate("MainWindow", "Device ID", None, QtGui.QApplication.UnicodeUTF8))
-            label.setObjectName("label-"+devID)
-            horLayout.addWidget(label)
-            lineEdit = QtGui.QLineEdit(container)
-            lineEdit.setSizePolicy(sizePolicy)
-            lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
-            lineEdit.setObjectName("devIDLineEdit-"+devID)
-            lineEdit.setText(devID)
-            lineEdit.setReadOnly(True)
-            horLayout.addWidget(lineEdit)
-            connectPushButton = QtGui.QPushButton(container)
-            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
-            sizePolicy.setHorizontalStretch(0)
-            sizePolicy.setVerticalStretch(0)
-            sizePolicy.setHeightForWidth(connectPushButton.sizePolicy().hasHeightForWidth())
-            connectPushButton.setSizePolicy(sizePolicy)
-            connectPushButton.setText(QtGui.QApplication.translate("MainWindow", "Connect", None, QtGui.QApplication.UnicodeUTF8))
-            connectPushButton.setObjectName("connectPushButton-"+port)
-            horLayout.addWidget(connectPushButton)
-            spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-            horLayout.addItem(spacerItem)
-            self.singleChannelDeviceComboBox.addItem(port)
-
-            self.connectPushButton[port]  = connectPushButton
-
-            pressedCallback = functools.partial(self.connectPressed_Callback,port)
-            connectPushButton.pressed.connect(pressedCallback)
-            clickedCallback = functools.partial(self.connectClicked_Callback,port)
-            connectPushButton.clicked.connect(clickedCallback)
-
     def initialize(self):
-        self.dev = None
-        # Set default com port
-        osType = platform.system()
-        self.portList = []
-        if osType == 'Linux': 
-            self.port = '/dev/ACM0'
-            p1 = Popen(["ls","/dev"], stdout=PIPE)
-            p2 = Popen(["grep","-E","ACM|USB"], stdin=p1.stdout, stdout=PIPE)
-            p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
-            output = p2.communicate()[0]            
-            for port in output.split():
-                self.portList.append("/dev/"+port);
-        else: 
-            self.port = 'com1'
-        
+        self.devs = {'portList':[],'idList':[],'connected':False,'devices':{}}
+
         self.channelRadioButton_1.setChecked(True)
         self.statusbar.showMessage('Not Connected')
 
@@ -178,6 +71,134 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.tStart = None
         self.multiChannelState = 'cmd' 
 
+    def main(self):
+        self.show()
+
+    def closeEvent(self,event):
+        if not (self.devs['connected'] == False):
+            self.cleanUpAndCloseDevices()
+        event.accept()
+
+    def cleanUpAndCloseDevices(self):
+        for devId in self.devs['devices']:
+            dev = self.devs['devices'][devId]
+            dev.setModeStopped()
+            dev.setChannel(0)
+            dev.close()
+        self.devs['devices'] = {} 
+        self.devs['connected'] = False
+
+    def connectActions(self):
+        # Actions for widgets on the single channel tab
+        for chan in range(1,NUM_CHANNELS+1):
+            radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
+            radioButton.clicked.connect(self.channelRadioButtonClicked_Callback)
+        self.singleChannelStart.clicked.connect(self.singleChannelStart_Callback)
+        self.clearNormalizationPushButton.clicked.connect(self.clearNormalization_Callback)
+        self.setNormalizationPushButton.clicked.connect(self.setNormalization_Callback)
+        self.saveNormalizationPushButton.clicked.connect(self.saveNormalization_Callback)
+        self.loadNormalizationPushButton.clicked.connect(self.loadNormalization_Callback)
+
+        # Actions for widgets on the multi channel mode tab
+        self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
+        self.setLogFileToolButton.clicked.connect(self.setLogFile_Callback)
+        self.scanPushButton.pressed.connect(self.scanPressedDev_Callback)
+        self.scanPushButton.clicked.connect(self.scanClickedDev_Callback)
+
+        self.connectPushButton.clicked.connect(self.connectClicked_Callback)
+        self.connectPushButton.pressed.connect(self.connectPressed_Callback)
+
+    def scanPressedDev_Callback(self):
+        # Allows hotplugging a device
+        self.devs = {'portList':[],'idList':[],'connected':False,'devices':{}}
+        self.depopulateDevices()
+
+    def scanClickedDev_Callback(self):
+        osType = platform.system()
+        # Linux
+        if osType == 'Linux': 
+            # Sample output
+            # ('/dev/ttyACM2', 'ttyACM2', 'USB VId:PId=1eaf:0004')
+            for port in list_ports.comports():
+                if (re.search(MAPLE_VENDOR_ID,port[2])):
+                    # This try:except wraps the initialization of the Serial object.  Another 
+                    # try-except within in the actual initialization method wraps the attempt 
+                    # to communicate with the Serial device.
+                    try:
+                        with ExpressoSerial(port[0]) as dev:
+                            if(dev.isExpressoDevice):
+                                self.devs['portList'].append(port[0]);
+                                self.devs['idList'].append(dev.devId);
+                    # If a device with a MAPLE_VENDOR_ID doesn't respond something is funky.
+                    except Exception, e:
+                        QtGui.QMessageBox.critical(self,'Error', str(e))
+        # Windows
+        else: 
+            pass
+
+        if len(self.devs['portList'])>0:
+            self.populateDevWidgetContainer()
+            self.devWidgetContainer.setEnabled(True)
+        else:
+            QtGui.QMessageBox.critical(self,'Error', 'No expresso devices found in the system.')
+
+    def populateDevWidgetContainer(self):
+        for port,devId in zip(self.devs['portList'],self.devs['idList']):
+            container = QtGui.QWidget(self.deviceTab)
+            container.setObjectName("widget-"+devId)
+            spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+            self.devWidgetVLay.addWidget(container)
+            label = QtGui.QLabel(container)
+            font = QtGui.QFont()
+            font.setBold(True)
+            font.setWeight(75)
+            label.setFont(font)
+            label.setText(QtGui.QApplication.translate("MainWindow", "Port", None, QtGui.QApplication.UnicodeUTF8))
+            label.setObjectName("label-"+devId)
+            horLayout = QtGui.QHBoxLayout(container)
+            horLayout.setMargin(0)
+            horLayout.setObjectName("horizontalLayout-"+devId)
+            horLayout.addItem(spacerItem)
+            horLayout.addWidget(label)
+            lineEdit = QtGui.QLineEdit(container)
+            sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(lineEdit.sizePolicy().hasHeightForWidth())
+            lineEdit.setSizePolicy(sizePolicy)
+            lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+            lineEdit.setObjectName("portLineEdit-"+devId)
+            lineEdit.setText(port)
+            lineEdit.setReadOnly(True)
+            horLayout.addWidget(lineEdit)
+            horLayout.addItem(spacerItem)
+            label = QtGui.QLabel(container)
+            label.setFont(font)
+            label.setText(QtGui.QApplication.translate("MainWindow", "Device Id", None, QtGui.QApplication.UnicodeUTF8))
+            label.setObjectName("label-"+devId)
+            horLayout.addWidget(label)
+            lineEdit = QtGui.QLineEdit(container)
+            lineEdit.setSizePolicy(sizePolicy)
+            lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+            lineEdit.setObjectName("devIdLineEdit-"+devId)
+            lineEdit.setText(devId)
+            lineEdit.setReadOnly(True)
+            horLayout.addWidget(lineEdit)
+            horLayout.addItem(spacerItem)
+
+            cb = QtGui.QCheckBox(self.singleChannelStartWidget)
+            cb.setText(QtGui.QApplication.translate("MainWindow", "", None, QtGui.QApplication.UnicodeUTF8))
+            cb.setObjectName("cb_"+devId)
+            cb.setChecked(True)
+            horLayout.addWidget(cb)
+            horLayout.addItem(spacerItem)
+
+    def depopulateDevices(self):
+        while(self.devWidgetVLay.itemAt(0)):
+            self.devWidgetVLay.removeItem(self.devWidgetVLay.itemAt(0))
+            self.singleChannelDeviceComboBox.removeItem(0)
+        self.devWidgetContainer.setEnabled(False)
+
     def initializePlot(self):
         self.pixelPlot, = self.mpl.canvas.ax.plot([],[],'b',linewidth=2)
         self.levelPlot, = self.mpl.canvas.ax.plot([0],[0],'or')
@@ -194,39 +215,67 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def portLineEditFinished_Callback(self):
         self.port = str(self.portLineEdit.text())
 
-    def connectPressed_Callback(self,port):
-        if self.dev == None:
-            self.connectPushButton[port].setText('Disconnect')
-            self.statusbar.showMessage('Connecting ... ')
+    def connectPressed_Callback(self):
+        if not self.devs['connected']:
+            self.devWidget.setEnabled(False)
+            self.scanPushButton.setEnabled(False)
+            self.connectPushButton.setText('Disconnect')
+            self.statusbar.showMessage('Connecting... ')
+
+    def populateDeviceTabs(self):
+        # Rename the first, pre-existing multi channel tab
+        self.multiChannelDeviceTabs.setTabText(self.multiChannelDeviceTabs.indexOf(self.mc_tab1), self.devs['devices'].keys()[0])
+        # If more than one device is connected, create additional tabs
+        if len(self.devs['devices'])>=2:
+            c = 2
+            for devId in self.devs['devices'].keys()[1:]:
+                tmpTab = QtGui.QWidget()
+                tmpTab.setObjectName("mc_tab"+str(c))
+                mcwidget = McWidget(tmpTab)
+                mcwidget.setGeometry(QtCore.QRect(9, 9, 594, 382))
+                sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+                sizePolicy.setHorizontalStretch(0)
+                sizePolicy.setVerticalStretch(0)
+                sizePolicy.setHeightForWidth(mcwidget.sizePolicy().hasHeightForWidth())
+                mcwidget.setSizePolicy(sizePolicy)
+                mcwidget.setMinimumSize(QtCore.QSize(200, 200))
+                mcwidget.setObjectName("mc_"+str(c))
+                self.multiChannelDeviceTabs.insertTab(1,tmpTab,devId)
+                c+=1
 
     def connectClicked_Callback(self,port):
-        if self.dev == None:
+        if not self.devs['connected']:
+            widget_idx = 0
+            for port,devId in zip(self.devs['portList'],self.devs['idList']):
+                # Hacky way of retrieving dynamically created checkboxes
+                cb = self.devWidgetVLay.itemAt(widget_idx).widget().layout().itemAt(7).widget()
+                widget_idx+=1
+                if cb.isChecked():
+                    try:
+                        self.devs['devices'][devId] = ExpressoSerial(port)
+                        self.singleChannelDeviceComboBox.addItem(devId)
+                    except Exception, e:
+                        QtGui.QMessageBox.critical(self,'Error', str(e))
+            if len(self.devs['devices'])>0:
+                self.devs['connected']=True
+                self.populateDeviceTabs()
+                self.setWidgetEnabledOnConnect()
+            else:
+                self.devs['connected']=False
+        else:
+            self.connectPushButton.setText('Connect')
             try:
-                self.dev = ExpressoSerial(port)
-                connected = True
+                self.cleanUpAndCloseDevices()
+                self.depopulateDevices()
+                self.setWidgetEnabledOnDisconnect()
             except Exception, e:
                 QtGui.QMessageBox.critical(self,'Error', str(e))
-                self.connectPushButton[port].setText('Connect')
-                self.statusbar.showMessage('Not Connected')
-                connected = False
-        else:
-            self.connectPushButton[port].setText('Connect')
-            try:
-                self.cleanUpAndCloseDevice()
-            except Exception, e:
-                QtGui.QMessageBox.critical(self,'Error', str(e))
-            connected = False
-
-        if connected:
-            chan = self.getCheckedChannelRadioButton()
-            self.dev.setChannel(chan-1)
-            self.setWidgetEnabledOnConnect()
-        else:
-            self.setWidgetEnabledOnDisconnect()
+            self.devs['connected']=False
 
     def setWidgetEnabledOnDisconnect(self): 
+        self.scanPushButton.setEnabled(True)
+        self.devWidget.setEnabled(True)
         self.deviceTab.setEnabled(True)
-        #self.portLineEdit.setEnabled(True)
         self.singleChannelTab.setEnabled(False)
         self.multiChannelTab.setEnabled(False)
         self.singleChannelTab.setEnabled(False)
@@ -234,7 +283,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.singleChannelStartWidget.setEnabled(False)
         self.singleChannelPixelWidget.setEnabled(False)
         self.singleChannelLevelWidget.setEnabled(False)
-        self.multiChannelDeviceTabWidget.setEnabled(False)
+        self.multiChannelDeviceTabs.setEnabled(False)
         self.multiChannelStartWidget.setEnabled(False)
         self.statusbar.showMessage('Not Connected')
 
@@ -243,24 +292,32 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.multiChannelTab.setEnabled(True)
         self.singleChannelStartWidget.setEnabled(True)
         self.multiChannelStartWidget.setEnabled(True)
-        self.multiChannelDeviceTabWidget.setEnabled(True)
+        self.multiChannelDeviceTabs.setEnabled(True)
         self.statusbar.showMessage('Connected, Mode = Stopped')
 
     def clearNormalization_Callback(self):
         chan = self.getCheckedChannelRadioButton()
-        self.dev.unSetNormConst(chan-1)
+        devId = str(self.singleChannelDeviceComboBox.currentText())
+        dev = self.devs['devices'][devId]
+        dev.unSetNormConst(chan-1)
 
     def setNormalization_Callback(self):
         chan = self.getCheckedChannelRadioButton()
-        self.dev.setNormConstFromBuffer(chan-1)
+        devId = str(self.singleChannelDeviceComboBox.currentText())
+        dev = self.devs['devices'][devId]
+        dev.setNormConstFromBuffer(chan-1)
 
     def saveNormalization_Callback(self):
         chan = self.getCheckedChannelRadioButton()
-        self.dev.saveNormConstToFlash(chan-1)
+        devId = str(self.singleChannelDeviceComboBox.currentText())
+        dev = self.devs['devices'][devId]
+        dev.saveNormConstToFlash(chan-1)
 
     def loadNormalization_Callback(self):
         chan = self.getCheckedChannelRadioButton()
-        self.dev.setNormConstFromFlash(chan-1)
+        devId = str(self.singleChannelDeviceComboBox.currentText())
+        dev = self.devs['devices'][devId]
+        dev.setNormConstFromFlash(chan-1)
 
     def getCheckedChannelRadioButton(self):
         for chan in range(1,NUM_CHANNELS+1):
@@ -271,7 +328,9 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def channelRadioButtonClicked_Callback(self):
         chan = self.getCheckedChannelRadioButton()
-        self.dev.setChannel(chan-1)
+        devId = str(self.singleChannelDeviceComboBox.currentText())
+        dev = self.devs['devices'][devId]
+        dev.setChannel(chan-1)
         self.tLast = None
 
     def singleChannelStart_Callback(self):
@@ -289,11 +348,17 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.pixelPlot.set_visible(False)
             self.levelPlot.set_visible(False)
             self.mpl.canvas.fig.canvas.draw()
-            self.dev.setModeStopped()
+            devId = str(self.singleChannelDeviceComboBox.currentText())
+            dev = self.devs['devices'][devId]
+            dev.setModeStopped()
         else:
             # Start single channel mode - stream in level and pixel data
             # from single sensor
-            self.dev.setModeSingleChannel()
+
+            # Current Expresso Id
+            devId = str(self.singleChannelDeviceComboBox.currentText())
+            dev = self.devs['devices'][devId]
+            dev.setModeSingleChannel()
             chan = self.getCheckedChannelRadioButton()
             self.tLast = None
             self.singleChannelPixelWidget.setEnabled(True)
@@ -331,7 +396,9 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         """
         # Get fluid level and pixel data
         try:
-            pixelLevel, data = self.dev.getPixelData()
+            devId = str(self.singleChannelDeviceComboBox.currentText())
+            dev = self.devs['devices'][devId]
+            pixelLevel, data = dev.getPixelData()
         except AttributeError, e:
             return
         fluidLevel = self.pixelToFluidLevel(pixelLevel)
@@ -359,10 +426,12 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def multiChannelStart_Callback(self):
 
         if self.timerMultiChannel.isActive():
+            devId = str(self.singleChannelDeviceComboBox.currentText())
+            dev = self.devs['devices'][devId]
             # Multi channel mode stop
             self.timerMultiChannel.stop()
             if self.multiChannelState == 'rsp':
-                self.dev.getLevels_Rsp()
+                dev.getLevels_Rsp()
             self.multiChannelStart.setText('Start')
             self.statusbar.showMessage('Connected, Mode = Stopped')
             self.clearAllMultiChanProgressBar()
@@ -370,7 +439,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             self.singleChannelTab.setEnabled(True)
             self.logFileWidget.setEnabled(True)
             self.loggingCheckBox.setEnabled(True)
-            self.dev.setModeStopped()
+            dev.setModeStopped()
             self.multiChannelTimeLabel.setText('____ s')
             self.tStart = None
             if self.loggingCheckBox.isChecked():
@@ -382,7 +451,9 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 if not self.createLogFile():
                     return
             # Multi channel mode start
-            self.dev.setModeMultiChannel()
+            devId = str(self.singleChannelDeviceComboBox.currentText())
+            dev = self.devs['devices'][devId]
+            dev.setModeMultiChannel()
             self.deviceTab.setEnabled(False)
             self.singleChannelTab.setEnabled(False)
             self.logFileWidget.setEnabled(False)
@@ -439,16 +510,18 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.multiChannelTimeLabel.repaint()
 
         # Get fluid level from sensors
+        devId = str(self.singleChannelDeviceComboBox.currentText())
+        dev = self.devs['devices'][devId]
         if self.multiChannelState == 'cmd':
             try:
-                self.dev.getLevels_Cmd()
+                dev.getLevels_Cmd()
             except AttributeError, e:
                 return
             self.multiChannelState = 'rsp'
         else:
             try:
                 #pixelLevelList = self.dev.getLevels()
-                pixelLevelList = self.dev.getLevels_Rsp()
+                pixelLevelList = dev.getLevels_Rsp()
             except AttributeError, e:
                 return
             self.multiChannelState = 'cmd'
@@ -513,21 +586,23 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         """
         return data*PIXEL_TO_VOLT
 
-    def getMultiChanProgressBar(self,num):
-        return getattr(self, 'multiChannelProgressBar_{0}'.format(num))
+    def getMultiChanProgressBar(self,num,widget):
+            return getattr(widget, 'multiChannelProgressBar_{0}'.format(num+5))
 
     def clearProgressBar(self,progressBar):
         msg = 'no data'
         progressBar.setFormat(msg)
         progressBar.setValue(0)
 
-    def clearMultiChanProgressBar(self,num):
-        progressBar = self.getMultiChanProgressBar(num)
+    def clearMultiChanProgressBar(self,num,widget):
+        progressBar = self.getMultiChanProgressBar(num,widget)
         self.clearProgressBar(progressBar)
 
     def clearAllMultiChanProgressBar(self):
-        for i in range(1,NUM_CHANNELS+1):
-            self.clearMultiChanProgressBar(i)
+        widgets = self.getMultiChanWidgets()
+        for widget in widgets:
+            for i in range(1,NUM_CHANNELS+1):
+                self.clearMultiChanProgressBar(i,widget)
 
     def clearSingleChanProgressBar(self):
         self.clearProgressBar(self.singleChannelProgressBar)
@@ -541,8 +616,8 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         progressBar.setFormat(valueStr)
         progressBar.setValue(value)
 
-    def setMultiChanProgressBar(self, num, value):
-        progressBar = self.getMultiChanProgressBar(num)
+    def setMultiChanProgressBar(self, num, value, widget):
+        progressBar = self.getMultiChanProgressBar(num, widget)
         self.setProgressBar(progressBar, value)
 
     def setSingleChanProgressBar(self,value):
@@ -554,25 +629,33 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def setSingleChanProgressBarRange(self):
         self.setProgressBarRange(self.singleChannelProgressBar)
 
-    def setMultiChanProgressBarRange(self,i): 
-        progressBar = self.getMultiChanProgressBar(i)
+    def setMultiChanProgressBarRange(self,i,widget): 
+        progressBar = self.getMultiChanProgressBar(i,widget)
         self.setProgressBarRange(progressBar)
 
     def setAllMultiChanProgressBarRange(self):
-        for i in range(1,NUM_CHANNELS+1):
-            self.setMultiChanProgressBarRange(i)
+        widgets = self.getMultiChanWidgets()
+        for widget in widgets:
+            for i in range(1,NUM_CHANNELS+1):
+                self.setMultiChanProgressBarRange(i,widget)
 
     def setAllProgressBarRange(self):
         self.setAllMultiChanProgressBarRange()
         self.setSingleChanProgressBarRange()
 
-    def setMultiChanProgressBarFont(self,i):
-        progressBar = self.getMultiChanProgressBar(i)
+    def setMultiChanProgressBarFont(self,i,widget):
+        progressBar = self.getMultiChanProgressBar(i,widget)
         self.setProgressBarFont(progressBar)
+    
+    def getMultiChanWidgets(self):
+        if len(self.devs['devices'])==0:
+            return [self.mc_1]
 
     def setAllMultiChanProgressBarFont(self):
-        for i in range(1,NUM_CHANNELS+1):
-            self.setMultiChanProgressBarFont(i)
+        widgets = self.getMultiChanWidgets()
+        for widget in widgets:
+            for i in range(1,NUM_CHANNELS+1):
+                self.setMultiChanProgressBarFont(i,widget)
 
     def setSingleChanProgressBarFont(self):
         self.setProgressBarFont(self.singleChannelProgressBar)

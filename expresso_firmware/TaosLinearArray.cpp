@@ -190,23 +190,27 @@ void TaosLinearArray::saveNormConstToFlash(uint8 chanNum) {
     }
 } 
 
-void TaosLinearArray::setDeviceID(uint16 deviceID) {
+void TaosLinearArray::setDeviceId(uint32 deviceId) {
     uint8 pageNum = numAin;
+    // deviceId = 0x78765432;
     if (pageNum < flashMemory.numPages) {
         flashMemory.erasePage(pageNum);
-        uint8 id_lsb = (uint8) (deviceID&&0xFF);
-        uint8 id_msb = (uint8) (deviceID>>8);
-        flashMemory.writeData(pageNum,0,id_lsb,id_msb);
+        flashMemory.writeData(pageNum,0,deviceId&0xFFFF);
+        flashMemory.writeData(pageNum,1,(deviceId>>16)&0xFFFF);
     }
 }
  
-uint16 TaosLinearArray::getDeviceID() {
+uint32 TaosLinearArray::getDeviceId() {
     uint8 pageNum = numAin;
-    uint8 id_lsb;
-    uint8 id_msb;
-    flashMemory.readData(pageNum,0,id_lsb,id_msb);
-    _deviceID = (uint16) (id_lsb|(id_msb<<8));
-    return _deviceID;
+    uint16 id_lsb;
+    uint16 id_msb;
+    flashMemory.readData(pageNum,0,id_lsb);
+    flashMemory.readData(pageNum,1,id_msb);
+    //id_lsb = 0xFFFF; // 1
+    //id_msb = 0x0000; // Nothing
+    _deviceId = (uint32) id_msb<<16;
+    _deviceId |= (uint32) id_lsb;
+    return _deviceId;
 }
 
 void TaosLinearArray::startDataRead() {

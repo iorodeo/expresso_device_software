@@ -8,16 +8,14 @@ const int cmdGetLevel = 3;
 const int cmdGetLevels = 4;
 const int cmdGetPixelData = 5;
 const int cmdGetWorkingBuffer = 6;
-const int cmdGetDeviceID = 7;
-const int cmdGetDeviceNumber =8;
-const int cmdSetDeviceNumber = 9;
+const int cmdGetDeviceId = 7;
+const int cmdSetDeviceId = 16;
 const int cmdUnSetNormConst = 10;
 const int cmdSetNormConstFromBuffer = 11;
 const int cmdSetNormConstFromFlash = 12;
 const int cmdSetChannel = 13;
 const int cmdSaveNormConstToFlash=14;
 const int cmdGetBoundData = 15;
-const int cmdSetDeviceID = 16;
 
 // Serial Response ids 
 const int rspSuccess = 0;
@@ -79,20 +77,12 @@ void MessageHandler::msgSwitchYard() {
             getWorkingBuffer();
             break;
 
-        case cmdGetDeviceID:
-            getDeviceID();
+        case cmdGetDeviceId:
+            getDeviceId();
             break;
 
-        case cmdSetDeviceID:
-            setDeviceID();
-            break;
-
-        case cmdGetDeviceNumber:
-            getDeviceNumber();
-            break;
-
-        case cmdSetDeviceNumber:
-            setDeviceNumber();
+        case cmdSetDeviceId:
+            setDeviceId();
             break;
 
         case cmdUnSetNormConst:
@@ -324,11 +314,20 @@ void MessageHandler::saveNormConstToFlash() {
     return;
 }
 
-void MessageHandler::setDeviceID() {
-    uint16 deviceID;
-    if (numberOfItems()==2) {
-        deviceID = (uint16) readInt(1);
-        linearArray.setDeviceID(deviceID);
+void MessageHandler::setDeviceId() {
+    uint32 deviceId;
+    if (numberOfItems()==3) {
+        // Created tmp variable to convert Hex to Int
+        // did not implement in the end
+        //char tmp = readChar(1,0);
+        uint16 id_msb = readInt(1);
+
+        //tmp = readChar(1,0);
+        uint16 id_lsb = readInt(2);
+
+        deviceId = (uint32) id_msb<<16;
+        deviceId |= (uint32) id_lsb;
+        linearArray.setDeviceId(deviceId);
         SerialUSB << rspSuccess << endl;
         return;
     }
@@ -336,27 +335,10 @@ void MessageHandler::setDeviceID() {
     return;
 }
 
-void MessageHandler::getDeviceID() {
-    uint16 deviceID = linearArray.getDeviceID();
-    SerialUSB << rspSuccess << " " << deviceID << endl;
-    return;
-}
-
-void MessageHandler::setDeviceNumber() {
-    uint8 deviceNum;
-    if (numberOfItems()==2) {
-        deviceNum = (uint8) readInt(1);
-        systemState.setDeviceNumber(deviceNum);
-        SerialUSB << rspSuccess << endl;
-        return;
-    }
-    SerialUSB << rspError << endl;
-    return;
-}
-
-void MessageHandler::getDeviceNumber() {
-    uint16 deviceNum = systemState.getDeviceNumber();
-    SerialUSB << rspSuccess << " " << deviceNum << endl;
+void MessageHandler::getDeviceId() {
+    // largest id 0x7FFFFFFF;
+    uint32 deviceId = linearArray.getDeviceId();
+    SerialUSB << rspSuccess << " " << _HEX(deviceId) << endl;
     return;
 }
 

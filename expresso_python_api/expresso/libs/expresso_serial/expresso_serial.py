@@ -1,5 +1,5 @@
 from __future__ import print_function
-import serial
+import serial,sys
 import time
 import numpy
 #from expresso.libs.serial_device import SerialDevice
@@ -17,8 +17,7 @@ CMD_GET_LEVELS = 4
 CMD_GET_PIXEL_DATA = 5
 CMD_GET_WORKING_BUFFER = 6
 CMD_GET_DEVICE_ID = 7
-CMD_GET_DEVICE_NUMBER = 8
-CMD_SET_DEVICE_NUMBER = 9
+CMD_SET_DEVICE_ID = 9
 CMD_UNSET_NORM_CONST = 10
 CMD_SET_NORM_CONST_FROM_BUFFER = 11
 CMD_SET_NORM_CONST_FROM_FLASH = 12
@@ -42,13 +41,35 @@ ALLOWED_MODES = (
 ALLOWED_CHANNELS = range(0,NUM_CHANNELS)
 
 SUCCESS_CHR = '0' 
+EXPRESSO_DEV_ID = 'XP'
 
 class ExpressoSerial(serial.Serial):
 
     def __init__(self, port):
+        self.isExpressoDevice = False
         super(ExpressoSerial,self).__init__(port, baudrate=3000000, timeout=1)
         time.sleep(2.0)
         self.emptyBuffer()
+        cmd = self.makeCommand(CMD_GET_DEVICE_ID)
+        self.write(cmd)
+        # The get id command should return a message 0 0x5850YYZZ which is a hex
+        # encoded string for the S/N of the device. 5850 = XP, and YYZZ is the 
+        # number of the device, e.g., 3031 = 01.
+        line = self.readline()
+        # Check that we have a successful response from the device
+        if line.startswith(SUCCESS_CHR):
+            line = line.split()[1]
+            # Now check that this is in fact an Expresso device
+            if  (len(line)>=2): 
+                self.devId = line.decode("hex")
+                if (self.devId[0:2]==EXPRESSO_DEV_ID):
+                    self.isExpressoDevice = True
+        # At this time, it would be strange to have a case where a customer 
+        # has a Leaflab Maple plugged in, and it isn't an Expresso.  Thus,
+        # this will notify the user, but will not halt the application.
+        if not self.isExpressoDevice:
+            raise RuntimeWarning, 'Device '+port+' is not an Expresso.'
+            return
 
     def getMode(self):
         """

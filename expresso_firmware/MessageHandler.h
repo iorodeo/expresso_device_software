@@ -20,10 +20,8 @@ class MessageHandler : public SerialReceiver {
         void getPixelData();
         void getBoundData();
         void getWorkingBuffer();
-        void getDeviceID();
-        void setDeviceID();
-        void getDeviceNumber();
-        void setDeviceNumber();
+        void getDeviceId();
+        void setDeviceId();
         void unSetNormConst();
         void setNormConstFromBuffer();
         void setNormConstFromFlash();
