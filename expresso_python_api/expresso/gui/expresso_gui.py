@@ -111,7 +111,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def scanPressedDev_Callback(self):
         # Allows hotplugging a device
         self.devs = {'portList':[],'idList':[],'connected':False,'devices':{}}
-        self.depopulateDevices()
+        self.depopulateDevWidgetContainer()
 
     def scanClickedDev_Callback(self):
         osType = platform.system()
@@ -193,7 +193,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             horLayout.addWidget(cb)
             horLayout.addItem(spacerItem)
 
-    def depopulateDevices(self):
+    def depopulateDevWidgetContainer(self):
         while(self.devWidgetVLay.itemAt(0)):
             self.devWidgetVLay.removeItem(self.devWidgetVLay.itemAt(0))
             self.singleChannelDeviceComboBox.removeItem(0)
@@ -231,6 +231,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             for devId in self.devs['devices'].keys()[1:]:
                 tmpTab = QtGui.QWidget()
                 tmpTab.setObjectName("mc_tab"+str(c))
+                setattr(self,"mc_tab"+str(c),tmpTab)
                 mcwidget = McWidget(tmpTab)
                 mcwidget.setGeometry(QtCore.QRect(9, 9, 594, 382))
                 sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -240,6 +241,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 mcwidget.setSizePolicy(sizePolicy)
                 mcwidget.setMinimumSize(QtCore.QSize(200, 200))
                 mcwidget.setObjectName("mc_"+str(c))
+                setattr(self,"mc_"+str(c),mcwidget)
                 self.multiChannelDeviceTabs.insertTab(1,tmpTab,devId)
                 c+=1
 
@@ -260,13 +262,16 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 self.devs['connected']=True
                 self.populateDeviceTabs()
                 self.setWidgetEnabledOnConnect()
+                self.setAllProgressBarFont()
+                self.setAllProgressBarRange()
+                self.clearAllProgressBar()
             else:
                 self.devs['connected']=False
         else:
             self.connectPushButton.setText('Connect')
             try:
                 self.cleanUpAndCloseDevices()
-                self.depopulateDevices()
+                self.depopulateDevWidgetContainer()
                 self.setWidgetEnabledOnDisconnect()
             except Exception, e:
                 QtGui.QMessageBox.critical(self,'Error', str(e))
@@ -510,47 +515,59 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.multiChannelTimeLabel.repaint()
 
         # Get fluid level from sensors
-        devId = str(self.singleChannelDeviceComboBox.currentText())
-        dev = self.devs['devices'][devId]
+        tabs = self.getMultiChanTabs()
+        widgets = self.getMultiChanWidgets()
+
         if self.multiChannelState == 'cmd':
-            try:
-                dev.getLevels_Cmd()
-            except AttributeError, e:
-                return
+            for devId in self.devs['devices']:
+                dev = self.devs['devices'][devId]
+                try:
+                    dev.getLevels_Cmd()
+                except AttributeError, e:
+                    return
             self.multiChannelState = 'rsp'
         else:
-            try:
-                #pixelLevelList = self.dev.getLevels()
-                pixelLevelList = dev.getLevels_Rsp()
-            except AttributeError, e:
-                return
+            pixelLevelDict = {}
+            for devId in self.devs['devices']:
+                dev = self.devs['devices'][devId]
+                try:
+                    pixelLevelDict[devId] = dev.getLevels_Rsp()
+                except AttributeError, e:
+                    #pixelLevelDict[devId] = [-1 for i in range(NUM_CHANNELS)]
+                    return
+            print pixelLevelDict
             self.multiChannelState = 'cmd'
 
-            fluidLevelList = []
-            for pixelLevel in pixelLevelList:
-                if pixelLevel>=0:
-                    fluidLevel = self.pixelToFluidLevel(pixelLevel)
-                else:
-                    fluidLevel = pixelLevel
-                fluidLevelList.append(fluidLevel)
+            for devId in self.devs['devices']:
+                widget = widgets[devId]
 
-            if len(fluidLevelList) == 0:
-                fluidLevelList = [-1 for i in range(NUM_CHANNELS)]
-            for i, fluidLevel in enumerate(fluidLevelList):
-                if fluidLevel >= 0: 
-                    self.setMultiChanProgressBar(i+1,fluidLevel)
-                else: 
-                    self.clearMultiChanProgressBar(i+1)
+                pixelLevelList = pixelLevelDict[devId]
+                fluidLevelList = []
 
-            # Log data
-            deviceName = 'device_1'
-            if self.loggingCheckBox.isChecked():
-                self.logger.add_dataset_value('/sample_t',tRun) 
-                for i, level in enumerate(fluidLevelList):
-                    #if level < 0:
-                        #level = numpy.nan
-                    dsetName = '/{0}/channel_{1}'.format(deviceName,i+1)
-                    self.logger.add_dataset_value(dsetName,level)
+                for pixelLevel in pixelLevelList:
+                    if pixelLevel>=0:
+                        fluidLevel = self.pixelToFluidLevel(pixelLevel)
+                    else:
+                        fluidLevel = pixelLevel
+                    fluidLevelList.append(fluidLevel)
+
+                if len(fluidLevelList) == 0:
+                    fluidLevelList = [-1 for i in range(NUM_CHANNELS)]
+                for i, fluidLevel in enumerate(fluidLevelList):
+                    if fluidLevel >= 0: 
+                        self.setMultiChanProgressBar(i+1,fluidLevel,widget)
+                    else: 
+                        self.clearMultiChanProgressBar(i+1,widget)
+
+                # Log data
+                deviceName = devId
+                if self.loggingCheckBox.isChecked():
+                    self.logger.add_dataset_value('/sample_t',tRun) 
+                    for i, level in enumerate(fluidLevelList):
+                        #if level < 0:
+                            #level = numpy.nan
+                        dsetName = '/{0}/channel_{1}'.format(deviceName,i+1)
+                        self.logger.add_dataset_value(dsetName,level)
 
     def setLogFile_Callback(self):
         # Get log file
@@ -587,7 +604,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         return data*PIXEL_TO_VOLT
 
     def getMultiChanProgressBar(self,num,widget):
-            return getattr(widget, 'multiChannelProgressBar_{0}'.format(num+5))
+        return getattr(widget, 'multiChannelProgressBar_{0}'.format(num+5))
 
     def clearProgressBar(self,progressBar):
         msg = 'no data'
@@ -600,7 +617,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def clearAllMultiChanProgressBar(self):
         widgets = self.getMultiChanWidgets()
-        for widget in widgets:
+        for widget in widgets.values():
             for i in range(1,NUM_CHANNELS+1):
                 self.clearMultiChanProgressBar(i,widget)
 
@@ -635,7 +652,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def setAllMultiChanProgressBarRange(self):
         widgets = self.getMultiChanWidgets()
-        for widget in widgets:
+        for widget in widgets.values():
             for i in range(1,NUM_CHANNELS+1):
                 self.setMultiChanProgressBarRange(i,widget)
 
@@ -648,12 +665,24 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.setProgressBarFont(progressBar)
     
     def getMultiChanWidgets(self):
-        if len(self.devs['devices'])==0:
-            return [self.mc_1]
+        widgetList = {}
+        for i in range(len(self.devs['devices'])):
+            devId = self.devs['devices'].keys()[i]
+            widget = getattr(self,'mc_'+str(i+1))
+            widgetList[devId] = widget
+        return widgetList
+
+    def getMultiChanTabs(self):
+        tabList = {}
+        for i in range(len(self.devs['devices'])):
+            devId = self.devs['devices'].keys()[i]
+            tab = getattr(self,'mc_tab'+str(i+1))
+            tabList[devId] = tab
+        return tabList
 
     def setAllMultiChanProgressBarFont(self):
         widgets = self.getMultiChanWidgets()
-        for widget in widgets:
+        for widget in widgets.values():
             for i in range(1,NUM_CHANNELS+1):
                 self.setMultiChanProgressBarFont(i,widget)
 
