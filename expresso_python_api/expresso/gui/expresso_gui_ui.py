@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'expresso_gui.ui'
 #
-# Created: Mon Jan 14 17:51:24 2013
+# Created: Wed Jan 16 12:41:39 2013
 #      by: PyQt4 UI code generator 4.8.5
 #
 # WARNING! All changes made in this file will be lost!
@@ -406,7 +406,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         self.multiChannelDeviceTabs.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 

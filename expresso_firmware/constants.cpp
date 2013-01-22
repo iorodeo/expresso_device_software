@@ -9,7 +9,7 @@ namespace constants {
     const int timerChan3rdQtr = 4;
     const uint8 si1Pin = 17; 
     const uint8 clkPin = 27;
-    const uint16 exposure = 20; 
+    const uint16 exposure = 1; 
     const uint8 ainPin[NUM_AIN] = {11, 10, 9, 8, 7};
     const uint8 normBaseLevel = 232; 
     const uint8 normScaleFact[2] = {3,2};

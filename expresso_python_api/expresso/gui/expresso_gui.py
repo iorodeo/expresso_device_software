@@ -242,7 +242,16 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 mcwidget.setMinimumSize(QtCore.QSize(200, 200))
                 mcwidget.setObjectName("mc_"+str(c))
                 setattr(self,"mc_"+str(c),mcwidget)
-                self.multiChannelDeviceTabs.insertTab(1,tmpTab,devId)
+                self.multiChannelDeviceTabs.insertTab(c,tmpTab,devId)
+                c+=1
+
+    def depopulateDeviceTabs(self):
+        self.multiChannelDeviceTabs.setTabText(self.multiChannelDeviceTabs.indexOf(self.mc_tab1), 'Device' )
+        # If more than one device is connected, create additional tabs
+        if len(self.devs['devices'])>=2:
+            c = 2
+            for devId in self.devs['devices'].keys()[1:]:
+                self.multiChannelDeviceTabs.removeTab(self.multiChannelDeviceTabs.indexOf(getattr(self,'mc_tab'+str(c))))
                 c+=1
 
     def connectClicked_Callback(self,port):
@@ -270,6 +279,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         else:
             self.connectPushButton.setText('Connect')
             try:
+                self.depopulateDeviceTabs()
                 self.cleanUpAndCloseDevices()
                 self.depopulateDevWidgetContainer()
                 self.setWidgetEnabledOnDisconnect()
@@ -431,34 +441,34 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def multiChannelStart_Callback(self):
 
         if self.timerMultiChannel.isActive():
-            devId = str(self.singleChannelDeviceComboBox.currentText())
-            dev = self.devs['devices'][devId]
-            # Multi channel mode stop
-            self.timerMultiChannel.stop()
-            if self.multiChannelState == 'rsp':
-                dev.getLevels_Rsp()
-            self.multiChannelStart.setText('Start')
-            self.statusbar.showMessage('Connected, Mode = Stopped')
-            self.clearAllMultiChanProgressBar()
-            self.deviceTab.setEnabled(True)
-            self.singleChannelTab.setEnabled(True)
-            self.logFileWidget.setEnabled(True)
-            self.loggingCheckBox.setEnabled(True)
-            dev.setModeStopped()
-            self.multiChannelTimeLabel.setText('____ s')
-            self.tStart = None
-            if self.loggingCheckBox.isChecked():
-                del self.logger
-                self.logger = None
+            for devId in self.devs['devices']:
+                dev = self.devs['devices'][devId]
+                # Multi channel mode stop
+                self.timerMultiChannel.stop()
+                if self.multiChannelState == 'rsp':
+                    dev.getLevels_Rsp()
+                    dev.setModeStopped()
+                self.multiChannelStart.setText('Start')
+                self.statusbar.showMessage('Connected, Mode = Stopped')
+                self.clearAllMultiChanProgressBar()
+                self.deviceTab.setEnabled(True)
+                self.singleChannelTab.setEnabled(True)
+                self.logFileWidget.setEnabled(True)
+                self.loggingCheckBox.setEnabled(True)
+                self.multiChannelTimeLabel.setText('____ s')
+                self.tStart = None
+                if self.loggingCheckBox.isChecked():
+                    del self.logger
+                    self.logger = None
         else:
             # If logging is turned on create log file
             if self.loggingCheckBox.isChecked():
                 if not self.createLogFile():
                     return
             # Multi channel mode start
-            devId = str(self.singleChannelDeviceComboBox.currentText())
-            dev = self.devs['devices'][devId]
-            dev.setModeMultiChannel()
+            for devId in self.devs['devices']:
+                dev = self.devs['devices'][devId]
+                dev.setModeMultiChannel()
             self.deviceTab.setEnabled(False)
             self.singleChannelTab.setEnabled(False)
             self.logFileWidget.setEnabled(False)
@@ -493,12 +503,13 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.logger.add_datetime('/','datetime')
         self.logger.add_dataset('/sample_t',(1,))
         self.logger.add_attribute('/sample_t', 'unit', 's')
-        deviceName = 'device_1'
-        self.logger.add_group('/{0}'.format(deviceName))
-        for i in range(1,NUM_CHANNELS+1):
-            datasetName = '/{0}/channel_{1}'.format(deviceName, i)
-            self.logger.add_dataset(datasetName, (1,))
-            self.logger.add_attribute(datasetName, 'unit', 'nl')
+        for devId in self.devs['devices']:
+            deviceName = devId
+            self.logger.add_group('/{0}'.format(deviceName))
+            for i in range(1,NUM_CHANNELS+1):
+                datasetName = '/{0}/channel_{1}'.format(deviceName, i)
+                self.logger.add_dataset(datasetName, (1,))
+                self.logger.add_attribute(datasetName, 'unit', 'nl')
         return True
 
     def timerMultiChannel_Callback(self): 
@@ -535,7 +546,6 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 except AttributeError, e:
                     #pixelLevelDict[devId] = [-1 for i in range(NUM_CHANNELS)]
                     return
-            print pixelLevelDict
             self.multiChannelState = 'cmd'
 
             for devId in self.devs['devices']:

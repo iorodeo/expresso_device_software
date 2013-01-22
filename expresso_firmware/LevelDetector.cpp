@@ -110,7 +110,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer,float *lastLevel) {
         }
     }
     if (!found) {
-        return levelNotFound-1;
+        return levelNotFound;
     }
 
     // Search forward until the first data point less than the lower 
@@ -126,7 +126,7 @@ float LevelDetector::findLevel(uint8 *dataBuffer,float *lastLevel) {
         }
     }
     if (!found) {
-        return levelNotFound-2;
+        return levelNotFound;
     }
 
     // Symmetry check for indexes
