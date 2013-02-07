@@ -31,7 +31,7 @@ setup(
 
     package_data = { },
     scripts=[
-        'bin/expresso_gui',
+        'expresso/bin/expresso-gui',
         ],
     license='../LICENSE.txt',
     description="Serial interface and control software for IO Rodeo's Expresso.",

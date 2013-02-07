@@ -133,8 +133,19 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                     except Exception, e:
                         QtGui.QMessageBox.critical(self,'Error', str(e))
         # Windows
-        else: 
-            pass
+        elif osType == 'Darwin': 
+            # Sample output
+            # ('/dev/ttyACM2', 'ttyACM2', 'USB VId:PId=1eaf:0004')
+            for port in list_ports.comports():
+                if (re.search('usbmodem',port[0])):
+                    try:
+                        with ExpressoSerial(port[0]) as dev:
+                            if(dev.isExpressoDevice):
+                                self.devs['portList'].append(port[0]);
+                                self.devs['idList'].append(dev.devId);
+                    # If a device with a MAPLE_VENDOR_ID doesn't respond something is funky.
+                    except Exception, e:
+                        QtGui.QMessageBox.critical(self,'Error', str(e))
 
         if len(self.devs['portList'])>0:
             self.populateDevWidgetContainer()
