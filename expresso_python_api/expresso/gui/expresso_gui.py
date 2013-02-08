@@ -32,6 +32,17 @@ LOG_FILE_EXT = '.hdf5'
 DEFAULT_LOG_FILE = 'expresso_default_log{0}'.format(LOG_FILE_EXT)
 MAPLE_VENDOR_ID = '1eaf'
 
+def full_port_name(portname):
+    """ Given a port-name (of the form COM7,
+        COM12, CNCA0, etc.) returns a full
+        name suitable for opening with the
+        Serial class.
+    """
+    m = re.match('^COM(\d+)$', portname)
+    if m and int(m.group(1)) < 10:
+        return portname
+    return '\\\\.\\' + portname
+
 class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def __init__(self,parent=None):
@@ -132,10 +143,10 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                     # If a device with a MAPLE_VENDOR_ID doesn't respond something is funky.
                     except Exception, e:
                         QtGui.QMessageBox.critical(self,'Error', str(e))
-        # Windows
+        # OS X
         elif osType == 'Darwin': 
             # Sample output
-            # ('/dev/ttyACM2', 'ttyACM2', 'USB VId:PId=1eaf:0004')
+            # ('tty.usbmodemNNN', 'tty.usbmodemNNN, 'tty.usbmodem')
             for port in list_ports.comports():
                 if (re.search('usbmodem',port[0])):
                     try:
@@ -146,6 +157,42 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                     # If a device with a MAPLE_VENDOR_ID doesn't respond something is funky.
                     except Exception, e:
                         QtGui.QMessageBox.critical(self,'Error', str(e))
+        # Windows
+        elif osType == 'Windows':
+            ports_list = []
+            """ Uses the Win32 registry to return an
+            iterator of serial (COM) ports
+            existing on this computer.
+            """
+            import _winreg as winreg
+            import itertools
+            path = 'HARDWARE\\DEVICEMAP\\SERIALCOMM'
+            try:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
+            except WindowsError:
+                raise IterationError
+
+            for i in itertools.count():
+                try:
+                    val = winreg.EnumValue(key, i)
+                    #ports_list.append(full_port_name(val[1]))
+                    ports_list.append(val[1])
+                except EnvironmentError:
+                    break
+
+            # Sample output
+            # ('/dev/ttyACM2', 'ttyACM2', 'USB VId:PId=1eaf:0004')
+            for port in ports_list:
+                print port
+                try:
+                    with ExpressoSerial(port) as dev:
+                        if(dev.isExpressoDevice):
+                            self.devs['portList'].append(port);
+                            self.devs['idList'].append(dev.devId);
+                # If a device with a MAPLE_VENDOR_ID doesn't respond something is funky.
+                except Exception, e:
+                    continue
+                    #QtGui.QMessageBox.critical(self,'Error', str(e))
 
         if len(self.devs['portList'])>0:
             self.populateDevWidgetContainer()
