@@ -180,10 +180,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 except EnvironmentError:
                     break
 
-            # Sample output
-            # ('/dev/ttyACM2', 'ttyACM2', 'USB VId:PId=1eaf:0004')
             for port in ports_list:
-                print port
                 try:
                     with ExpressoSerial(port) as dev:
                         if(dev.isExpressoDevice):

@@ -23,6 +23,7 @@ setup(
     packages=[
         'expresso/',
         'expresso/gui/',
+        'expresso/gui/mcwidget_ui/',
         'expresso/libs/',
         'expresso/libs/',
         'expresso/libs/expresso_serial/',
