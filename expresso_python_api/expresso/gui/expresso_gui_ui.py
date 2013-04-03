@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'expresso_gui.ui'
 #
-# Created: Wed Jan 16 12:41:39 2013
+# Created: Wed Apr  3 15:32:02 2013
 #      by: PyQt4 UI code generator 4.8.5
 #
 # WARNING! All changes made in this file will be lost!
@@ -327,6 +327,19 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.addWidget(self.multiChannelTimeLabel)
         spacerItem10 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_4.addItem(spacerItem10)
+        self.multiChannelFreqLabel = QtGui.QLabel(self.multiChannelStartWidget)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.multiChannelFreqLabel.setFont(font)
+        self.multiChannelFreqLabel.setText(QtGui.QApplication.translate("MainWindow", "Frequency (Hz)", None, QtGui.QApplication.UnicodeUTF8))
+        self.multiChannelFreqLabel.setObjectName(_fromUtf8("multiChannelFreqLabel"))
+        self.horizontalLayout_4.addWidget(self.multiChannelFreqLabel)
+        self.multiChannelFreqComboBox = QtGui.QComboBox(self.multiChannelStartWidget)
+        self.multiChannelFreqComboBox.setObjectName(_fromUtf8("multiChannelFreqComboBox"))
+        self.horizontalLayout_4.addWidget(self.multiChannelFreqComboBox)
+        spacerItem11 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem11)
         self.loggingCheckBox = QtGui.QCheckBox(self.multiChannelStartWidget)
         font = QtGui.QFont()
         font.setBold(True)
@@ -336,6 +349,8 @@ class Ui_MainWindow(object):
         self.loggingCheckBox.setChecked(True)
         self.loggingCheckBox.setObjectName(_fromUtf8("loggingCheckBox"))
         self.horizontalLayout_4.addWidget(self.loggingCheckBox)
+        spacerItem12 = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem12)
         self.multiChannelStart = QtGui.QPushButton(self.multiChannelStartWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -398,7 +413,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_9.addWidget(self.tabWidget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 674, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 674, 20))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtGui.QStatusBar(MainWindow)

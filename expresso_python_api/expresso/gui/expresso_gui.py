@@ -18,7 +18,8 @@ from mcwidget import McWidget
 
 # Constants
 TIMER_SINGLE_INTERVAL_MS =  333 
-TIMER_MULTI_INTERVAL_MS =  250 
+TIMER_MULTI_ALLOWED_FREQ = sorted([0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0])
+TIMER_MULTI_DEFAULT_FREQNUM = 4
 LOWPASS_FREQ_CUTOFF = 0.5 
 MM2NL = 5.0e3/54.8
 PIXEL2MM = 63.5e-3
@@ -52,6 +53,9 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.connectActions()
         self.setupTimers()
 
+    def main(self):
+        self.show()
+
     def initialize(self):
         self.devs = {'portList':[],'idList':[],'connected':False,'devices':{}}
 
@@ -82,8 +86,21 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.tStart = None
         self.multiChannelState = 'cmd' 
 
-    def main(self):
-        self.show()
+        self.setupMultiChannelFreqComboBox()
+        self.updateMultiChannelTimerInterval()
+
+        # DEV ----------------------------
+        #self.setWidgetEnabledOnConnect()
+        # --------------------------------
+
+    def setupMultiChannelFreqComboBox(self):
+        self.multiChannelFreq2IndexDict = {}
+        self.multiChannelIndex2FreqDict = {}
+        for i,f in enumerate(sorted(TIMER_MULTI_ALLOWED_FREQ)):
+            self.multiChannelFreq2IndexDict[f] = i
+            self.multiChannelIndex2FreqDict[i] = f
+            self.multiChannelFreqComboBox.addItem('{0:1.2f}'.format(f))
+        self.multiChannelFreqComboBox.setCurrentIndex(TIMER_MULTI_DEFAULT_FREQNUM) 
 
     def closeEvent(self,event):
         if not (self.devs['connected'] == False):
@@ -100,6 +117,13 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         self.devs['connected'] = False
 
     def connectActions(self):
+
+        # Actions or widgets on the decvice manager tab
+        self.scanPushButton.pressed.connect(self.scanPressedDev_Callback)
+        self.scanPushButton.clicked.connect(self.scanClickedDev_Callback)
+        self.connectPushButton.clicked.connect(self.connectClicked_Callback)
+        self.connectPushButton.pressed.connect(self.connectPressed_Callback)
+
         # Actions for widgets on the single channel tab
         for chan in range(1,NUM_CHANNELS+1):
             radioButton = getattr(self,'channelRadioButton_{0}'.format(chan))
@@ -113,11 +137,21 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
         # Actions for widgets on the multi channel mode tab
         self.multiChannelStart.clicked.connect(self.multiChannelStart_Callback)
         self.setLogFileToolButton.clicked.connect(self.setLogFile_Callback)
-        self.scanPushButton.pressed.connect(self.scanPressedDev_Callback)
-        self.scanPushButton.clicked.connect(self.scanClickedDev_Callback)
+        self.multiChannelFreqComboBox.currentIndexChanged.connect(
+                self.multiChannelFreqChanged_Callback
+                )
 
-        self.connectPushButton.clicked.connect(self.connectClicked_Callback)
-        self.connectPushButton.pressed.connect(self.connectPressed_Callback)
+    def multiChannelFreqChanged_Callback(self):
+        self.updateMultiChannelTimerInterval()
+
+    def getMultiChannelFreq(self):
+        index = self.multiChannelFreqComboBox.currentIndex()
+        value = self.multiChannelIndex2FreqDict[index]
+        return value
+
+    def updateMultiChannelTimerInterval(self):
+        freq = self.getMultiChannelFreq()
+        self.multiChannelTimerInterval = (0.5e3)/float(freq)
 
     def scanPressedDev_Callback(self):
         # Allows hotplugging a device
@@ -453,7 +487,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
         # Timer for multi channel mode
         self.timerMultiChannel = QtCore.QTimer()
-        self.timerMultiChannel.setInterval(TIMER_MULTI_INTERVAL_MS)
+        self.timerMultiChannel.setInterval(self.multiChannelTimerInterval)
         self.timerMultiChannel.timeout.connect(self.timerMultiChannel_Callback)
 
     def timerSingleChannel_Callback(self):
@@ -496,27 +530,33 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
     def multiChannelStart_Callback(self):
 
         if self.timerMultiChannel.isActive():
+            self.timerMultiChannel.stop() 
+            #--- DEV
             for devId in self.devs['devices']:
                 dev = self.devs['devices'][devId]
                 # Multi channel mode stop
-                self.timerMultiChannel.stop()
                 if self.multiChannelState == 'rsp':
                     dev.getLevels_Rsp()
                     dev.setModeStopped()
-                self.multiChannelStart.setText('Start')
-                self.statusbar.showMessage('Connected, Mode = Stopped')
-                self.clearAllMultiChanProgressBar()
-                self.deviceTab.setEnabled(True)
-                self.singleChannelTab.setEnabled(True)
-                self.logFileWidget.setEnabled(True)
-                self.loggingCheckBox.setEnabled(True)
-                self.multiChannelTimeLabel.setText('____ s')
-                self.tStart = None
-                if self.loggingCheckBox.isChecked():
-                    del self.logger
-                    self.logger = None
+            #---
+            self.multiChannelStart.setText('Start')
+            self.statusbar.showMessage('Connected, Mode = Stopped')
+            self.clearAllMultiChanProgressBar()
+            self.deviceTab.setEnabled(True)
+            self.singleChannelTab.setEnabled(True)
+            self.logFileWidget.setEnabled(True)
+            self.loggingCheckBox.setEnabled(True)
+            self.multiChannelFreqComboBox.setEnabled(True)
+            self.multiChannelTimeLabel.setText('____ s')
+            self.tStart = None
+            #--- DEV
+            if self.loggingCheckBox.isChecked():
+                del self.logger
+                self.logger = None
+            #---
         else:
-            # If logging is turned on create log file
+            ## If logging is turned on create log file
+            #--- DEV
             if self.loggingCheckBox.isChecked():
                 if not self.createLogFile():
                     return
@@ -524,14 +564,17 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             for devId in self.devs['devices']:
                 dev = self.devs['devices'][devId]
                 dev.setModeMultiChannel()
+            #---
             self.deviceTab.setEnabled(False)
             self.singleChannelTab.setEnabled(False)
             self.logFileWidget.setEnabled(False)
             self.loggingCheckBox.setEnabled(False)
+            self.multiChannelFreqComboBox.setEnabled(False)
             self.multiChannelStart.setText('Stop')
             self.statusbar.showMessage('Connected, Mode = Multi Channel')
             self.multiChannelState = 'cmd'
             self.tStart = time.time()
+            self.timerMultiChannel.setInterval(self.multiChannelTimerInterval)
             self.timerMultiChannel.start()
 
     def createLogFile(self):
