@@ -1,3 +1,4 @@
+from __future__ import print_function
 import re
 import os
 import sys
@@ -536,8 +537,14 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 dev = self.devs['devices'][devId]
                 # Multi channel mode stop
                 if self.multiChannelState == 'rsp':
-                    dev.getLevels_Rsp()
-                    dev.setModeStopped()
+                    # ---------------------------------------------------------
+                    # DEBUG - wrap in try loop
+                    try:
+                        dev.getLevels_Rsp()
+                        dev.setModeStopped()
+                    except Exception, e:
+                        print('Error in multi-channel stop: {0}'.format(e)) 
+                    # ---------------------------------------------------------
             #---
             self.multiChannelStart.setText('Start')
             self.statusbar.showMessage('Connected, Mode = Stopped')
@@ -563,7 +570,13 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
             # Multi channel mode start
             for devId in self.devs['devices']:
                 dev = self.devs['devices'][devId]
-                dev.setModeMultiChannel()
+                # -------------------------------------------------------------
+                # DEBUG - wrap in try loop
+                try:
+                    dev.setModeMultiChannel()
+                except Exception, e:
+                    print('Error in multi-channel start: {0}'.format(e))
+                # -------------------------------------------------------------
             #---
             self.deviceTab.setEnabled(False)
             self.singleChannelTab.setEnabled(False)
