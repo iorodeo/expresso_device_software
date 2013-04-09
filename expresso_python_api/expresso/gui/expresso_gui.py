@@ -530,6 +530,11 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
 
     def multiChannelStart_Callback(self):
 
+        # ---------------------------------------------------------------------
+        # DEBUG
+        print('multi-channel start/stop callback')
+        # ---------------------------------------------------------------------
+
         if self.timerMultiChannel.isActive():
             self.timerMultiChannel.stop() 
             #--- DEV
@@ -543,7 +548,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                         dev.getLevels_Rsp()
                         dev.setModeStopped()
                     except Exception, e:
-                        print('Error in multi-channel stop: {0}'.format(e)) 
+                        print('Error in multi-channel stop: devId={0}, err={1}'.format(devId,e)) 
                     # ---------------------------------------------------------
             #---
             self.multiChannelStart.setText('Start')
@@ -575,7 +580,7 @@ class ExpressoMainWindow(QtGui.QMainWindow,Ui_MainWindow):
                 try:
                     dev.setModeMultiChannel()
                 except Exception, e:
-                    print('Error in multi-channel start: {0}'.format(e))
+                    print('Error in multi-channel start: devId={0}, err={1}'.format(devId, e))
                 # -------------------------------------------------------------
             #---
             self.deviceTab.setEnabled(False)
