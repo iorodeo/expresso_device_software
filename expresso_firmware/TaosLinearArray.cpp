@@ -267,6 +267,7 @@ void TaosLinearArray::timerUpdate2ndQtr() {
             if (clkCnt == numPixel) {
                 ainCnt++;
                 if (ainCnt >= numAin) {
+                    // DEBUG - check zeroing of ainCnt  
                     readInProgress = false;
                     dataReadySignal = true;
                 }
