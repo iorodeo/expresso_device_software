@@ -7,7 +7,7 @@
 //
 #ifndef _MEDIAN_FILTER_H_
 #define _MEDIAN_FILTER_H_
-#include "WProgram.h"
+#include "Arduino.h"
 
 class MedianFilter {
     public:

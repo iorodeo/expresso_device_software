@@ -1,4 +1,7 @@
 #include "MessageHandler.h"
+#include "Arduino.h"
+
+const int baudRate = 115200;
 
 // Serial Commands ids
 const int cmdSetMode = 0;
@@ -17,15 +20,21 @@ const int cmdSetChannel = 13;
 const int cmdSaveNormConstToFlash=14;
 const int cmdGetBoundData = 15;
 
+
 // Serial Response ids 
 const int rspSuccess = 0;
 const int rspError = -1;
 const uint8 pixelSendChunk = 64;
 
+MessageHandler::MessageHandler() : SerialReceiver()
+{
+    Serial.begin(baudRate);
+}
+
 void MessageHandler::processMsg() {
-    if(SerialUSB.isConnected() && (SerialUSB.getDTR() || SerialUSB.getRTS())) {
-        while (SerialUSB.available() > 0) {
-            process(SerialUSB.read());
+    if(Serial.isConnected() && (Serial.getDTR() || Serial.getRTS())) {
+        while (Serial.available() > 0) {
+            process(Serial.read());
             if (messageReady()) {
                 msgSwitchYard();
                 reset();
@@ -102,7 +111,7 @@ void MessageHandler::msgSwitchYard() {
             break;
 
         default:
-            SerialUSB << rspError << endl;
+            Serial << rspError << endl;
             break;
     }
     return;
@@ -117,7 +126,7 @@ void MessageHandler::setMode() {
     if (num == 2) {
         mode = (uint16) readInt(1);
         if (systemState.setMode(mode)) {
-            SerialUSB <<  rspSuccess << endl;
+            Serial <<  rspSuccess << endl;
             return;
         }
     }
@@ -125,25 +134,25 @@ void MessageHandler::setMode() {
         mode = (uint16) readInt(1);
         channel = (uint8) readInt(2);
         if (systemState.setMode(mode,channel)) {
-            SerialUSB <<  rspSuccess << endl;
+            Serial <<  rspSuccess << endl;
             return;
         } 
     } 
-    SerialUSB << rspError  << endl;
+    Serial << rspError  << endl;
     return;
 } 
 
 void MessageHandler::getMode() {
     // Get the device's current operating mode.
     uint16 mode = systemState.getMode();
-    SerialUSB << rspSuccess << " " << mode << endl;
+    Serial << rspSuccess << " " << mode << endl;
     return;
 }
 
 void MessageHandler::getChannel() {
     // Get the device's "single channel mode" channel
     uint8 chan = systemState.getChannel();
-    SerialUSB << rspSuccess << " " << chan << endl;
+    Serial << rspSuccess << " " << chan << endl;
     return;
 }
 
@@ -153,11 +162,11 @@ void MessageHandler::setChannel() {
     if (num == 2) {
         chan = (uint8) readInt(1);
         if (systemState.setChannel(chan)) {
-            SerialUSB << rspSuccess << endl;
+            Serial << rspSuccess << endl;
             return;
         }
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -168,22 +177,22 @@ void MessageHandler::getLevel() {
         chan = (uint8) readInt(1);
         level = systemState.getLevel(chan);
         if (level) {
-            SerialUSB << rspSuccess << " " << level << endl;
+            Serial << rspSuccess << " " << level << endl;
             return;
         }
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
 void MessageHandler::getLevels() {
     // Get current capillary level measurements
-    SerialUSB << rspSuccess;
+    Serial << rspSuccess;
     for (uint8 i=0; i<constants::NUM_AIN; i++) {
-        SerialUSB << " ";
-        SerialUSB << systemState.getLevel(i);
+        Serial << " ";
+        Serial << systemState.getLevel(i);
     }
-    SerialUSB << endl;
+    Serial << endl;
     return;
 }
 
@@ -200,17 +209,17 @@ void MessageHandler::getBoundData() {
 
     if (mode == sysModeDebug) {
         systemState.getBounds(channel,&a,&b);
-        SerialUSB << rspSuccess << " "; 
-        SerialUSB << systemState.getLevel(channel); 
-        SerialUSB << " " << a; 
-        SerialUSB << " " << b; 
-        SerialUSB << endl;
+        Serial << rspSuccess << " "; 
+        Serial << systemState.getLevel(channel); 
+        Serial << " " << a; 
+        Serial << " " << b; 
+        Serial << endl;
 
         // Send pixel data as raw bytes
         sendPixelData(channel);
         return;
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -225,15 +234,15 @@ void MessageHandler::getPixelData() {
 
     if ((mode == sysModeSingleChannel) || (mode == sysModeDebug)) {
 
-        SerialUSB << rspSuccess << " "; 
-        SerialUSB << systemState.getLevel(channel); 
-        SerialUSB << endl;
+        Serial << rspSuccess << " "; 
+        Serial << systemState.getLevel(channel); 
+        Serial << endl;
 
         // Send pixel data as raw bytes
         sendPixelData(channel);
         return;
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -246,15 +255,15 @@ void MessageHandler::getWorkingBuffer() {
 
     if (mode == sysModeDebug) {
 
-        SerialUSB << rspSuccess << " "; 
-        SerialUSB << systemState.getLevel(channel); 
-        SerialUSB << endl;
+        Serial << rspSuccess << " "; 
+        Serial << systemState.getLevel(channel); 
+        Serial << endl;
 
         // Send pixel data as raw bytes
         sendWorkingBuffer();
         return;
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -264,11 +273,11 @@ void MessageHandler::unSetNormConst() {
         chan = (uint8) readInt(1);
         if (chan < linearArray.numAin) { 
             linearArray.unSetNormConst(chan);
-            SerialUSB << rspSuccess << endl;
+            Serial << rspSuccess << endl;
             return;
         }
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -278,11 +287,11 @@ void MessageHandler::setNormConstFromBuffer() {
         chan = (uint8) readInt(1);
         if (chan < linearArray.numAin) {
             linearArray.setNormConstFromBuffer(chan);
-            SerialUSB << rspSuccess << endl;
+            Serial << rspSuccess << endl;
             return;
         }
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -292,11 +301,11 @@ void MessageHandler::setNormConstFromFlash() {
         chan = (uint8) readInt(1);
         if (chan < linearArray.numAin) {
             linearArray.setNormConstFromFlash(chan);
-            SerialUSB << rspSuccess << endl;
+            Serial << rspSuccess << endl;
             return;
         }
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -306,11 +315,11 @@ void MessageHandler::saveNormConstToFlash() {
         chan = (uint8) readInt(1);
         if (chan < linearArray.numAin) {
             linearArray.saveNormConstToFlash(chan);
-            SerialUSB << rspSuccess << endl;
+            Serial << rspSuccess << endl;
             return;
         }
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
@@ -328,17 +337,17 @@ void MessageHandler::setDeviceId() {
         deviceId = (uint32) id_msb<<16;
         deviceId |= (uint32) id_lsb;
         linearArray.setDeviceId(deviceId);
-        SerialUSB << rspSuccess << endl;
+        Serial << rspSuccess << endl;
         return;
     }
-    SerialUSB << rspError << endl;
+    Serial << rspError << endl;
     return;
 }
 
 void MessageHandler::getDeviceId() {
     // largest id 0x7FFFFFFF;
     uint32 deviceId = linearArray.getDeviceId();
-    SerialUSB << rspSuccess << " " << _HEX(deviceId) << endl;
+    Serial << rspSuccess << " " << _HEX(deviceId) << endl;
     return;
 }
 
@@ -363,7 +372,7 @@ void sendPixelData(uint8 channel) {
     //        n = i;
     //    }
     //    pixelValue = linearArray.buffer[channel][n]; 
-    //    SerialUSB << _BYTE((char) pixelValue );
+    //    Serial << _BYTE((char) pixelValue );
     //}
     //return;
     //--------------------------------------------------------------------
@@ -373,7 +382,7 @@ void sendPixelData(uint8 channel) {
     uint16 numSend;
     numSend = linearArray.numPixel/pixelSendChunk;
     for (uint16 i=0; i<numSend; i++) {
-        SerialUSB.write(
+        Serial.write(
                 (linearArray.buffer[channel] + pixelSendChunk*i), 
                 pixelSendChunk
                 );
@@ -384,7 +393,7 @@ void sendWorkingBuffer() {
     uint16 numSend;
     numSend = linearArray.numPixel/pixelSendChunk;
     for (uint16 i=0; i<numSend; i++) {
-        SerialUSB.write(
+        Serial.write(
                 (systemState.detector.workBuffer + pixelSendChunk*i), 
                 pixelSendChunk
                 );

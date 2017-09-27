@@ -7,7 +7,7 @@
 #define _USE_MATH_DEFINES
 #ifndef _LOWPASS_FILTER_H_
 #define _LOWPASS_FILTER_H_
-#include "WProgram.h"
+#include "Arduino.h"
 #include "constants.h"
 
 class LowpassFilter {

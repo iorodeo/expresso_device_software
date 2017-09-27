@@ -7,7 +7,7 @@
 #ifndef _MEDIAN_H_
 #define _MEDIAN_H_
 #include <string.h>
-#include "WProgram.h"
+#include "Arduino.h"
 
 int medianCmpFunc(const void *xPtr, const void *yPtr);
 uint8 getMedian(uint8 *data, uint16 len); 

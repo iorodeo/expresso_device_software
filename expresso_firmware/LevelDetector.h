@@ -6,7 +6,7 @@
 //
 #ifndef _LEVEL_DETECTOR_H_
 #define _LEVEL_DETECTOR_H_
-#include "WProgram.h"
+#include "Arduino.h"
 #include "constants.h"
 #include "MedianFilter.h"
 #include "DerivFilter.h"

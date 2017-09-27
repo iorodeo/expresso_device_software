@@ -1,6 +1,6 @@
 #ifndef _SYSTEM_STATE_H_
 #define _SYSTEM_STATE_H_
-#include "WProgram.h"
+#include "Arduino.h"
 #include "constants.h"
 #include "LevelDetector.h"
 #include "TaosLinearArray.h"

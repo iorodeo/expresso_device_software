@@ -8,7 +8,7 @@
 //
 #ifndef _TAOS_LINEAR_ARRAY_H_
 #define _TAOS_LINEAR_ARRAY_H_
-#include "WProgram.h"
+#include "Arduino.h"
 #include <FlashMemory.h>
 #include "constants.h"
 

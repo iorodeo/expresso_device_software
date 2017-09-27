@@ -5,7 +5,6 @@
 // Will Dickson, IO Rodeo Inc.
 //
 #include "LevelDetector.h"
-#include "WProgram.h"
 #include "Streaming.h"
 #include <string.h>
 #include <math.h>

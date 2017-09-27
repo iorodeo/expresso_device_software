@@ -26,8 +26,9 @@ void DerivFilter::setShift(uint8 _shift) {
     shift = _shift;
 }
 
-void DerivFilter::setThreshold(uint16 x_val, uint16 y_val){
-    threshold = {x_val, y_val};
+void DerivFilter::setThreshold(uint16 x_val, uint16 y_val) {
+    threshold[0] = x_val;
+    threshold[1] = y_val;
 }
 
 uint16* DerivFilter::getThreshold() {

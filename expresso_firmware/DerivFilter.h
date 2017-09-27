@@ -6,7 +6,7 @@
 //
 #ifndef _DERIV_FILTER_H_ 
 #define _DERIV_FILTER_H_
-#include "WProgram.h"
+#include "Arduino.h"
 
 class DerivFilter {
     public:

@@ -8,6 +8,7 @@
 
 class MessageHandler : public SerialReceiver {
     public:
+        MessageHandler();
         void processMsg();
         void msgSwitchYard();
     private:

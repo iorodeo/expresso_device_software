@@ -1,6 +1,6 @@
 #ifndef _CONSTANTS_H_
 #define _CONSTANTS_H_
-#include "WProgram.h"
+#include "Arduino.h"
 
 namespace constants {
 
