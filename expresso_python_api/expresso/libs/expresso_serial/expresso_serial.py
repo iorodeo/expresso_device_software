@@ -17,14 +17,13 @@ CMD_GET_LEVELS = 4
 CMD_GET_PIXEL_DATA = 5
 CMD_GET_WORKING_BUFFER = 6
 CMD_GET_DEVICE_ID = 7
-CMD_SET_DEVICE_ID = 9
+CMD_SET_DEVICE_ID = 16
 CMD_UNSET_NORM_CONST = 10
 CMD_SET_NORM_CONST_FROM_BUFFER = 11
 CMD_SET_NORM_CONST_FROM_FLASH = 12
 CMD_SET_CHANNEL = 13
 CMD_SAVE_NORM_CONST_TO_FLASH=14
 CMD_GET_BOUND_DATA = 15
-CMD_SET_DEVICE_ID = 16
 
 # Operating modes
 MODE_STOPPED = 0
@@ -45,31 +44,65 @@ EXPRESSO_DEV_ID = 'XP'
 
 class ExpressoSerial(serial.Serial):
 
-    def __init__(self, port):
+    def __init__(self, port, checkId=True):
         self.isExpressoDevice = False
         super(ExpressoSerial,self).__init__(port, baudrate=3000000, timeout=1)
         time.sleep(2.0)
         self.emptyBuffer()
+
+        if checkId:
+            cmd = self.makeCommand(CMD_GET_DEVICE_ID)
+            self.write(cmd)
+            # The get id command should return a message 0 0x5850YYZZ which is a hex
+            # encoded string for the S/N of the device. 5850 = XP, and YYZZ is the 
+            # number of the device, e.g., 3031 = 01.
+            line = self.readline()
+            # Check that we have a successful response from the device
+            if line.startswith(SUCCESS_CHR):
+                line = line.split()[1]
+                # Now check that this is in fact an Expresso device
+                if  (len(line)>=2): 
+
+                    print(line)
+
+                    self.devId = line.decode("hex")
+
+                    print(self.devId)
+                    print(self.devId[0:2])
+
+                    if (self.devId[0:2]==EXPRESSO_DEV_ID):
+                        self.isExpressoDevice = True
+            # At this time, it would be strange to have a case where a customer 
+            # has a Leaflab Maple plugged in, and it isn't an Expresso.  Thus,
+            # this will notify the user, but will not halt the application.
+            if not self.isExpressoDevice:
+                raise RuntimeWarning, 'Device '+port+' is not an Expresso.'
+                return
+
+    def getDeviceId(self):
         cmd = self.makeCommand(CMD_GET_DEVICE_ID)
         self.write(cmd)
-        # The get id command should return a message 0 0x5850YYZZ which is a hex
-        # encoded string for the S/N of the device. 5850 = XP, and YYZZ is the 
-        # number of the device, e.g., 3031 = 01.
         line = self.readline()
-        # Check that we have a successful response from the device
-        if line.startswith(SUCCESS_CHR):
+        devId = None
+        if line.startswith(SUCCESS_CHR): 
             line = line.split()[1]
-            # Now check that this is in fact an Expresso device
-            if  (len(line)>=2): 
-                self.devId = line.decode("hex")
-                if (self.devId[0:2]==EXPRESSO_DEV_ID):
-                    self.isExpressoDevice = True
-        # At this time, it would be strange to have a case where a customer 
-        # has a Leaflab Maple plugged in, and it isn't an Expresso.  Thus,
-        # this will notify the user, but will not halt the application.
-        if not self.isExpressoDevice:
-            raise RuntimeWarning, 'Device '+port+' is not an Expresso.'
-            return
+            if len(line)>=2: 
+                devId = line.decode("hex")
+        return devId
+
+    def setDeviceId(self, num):
+        if not num in range(0,100):
+            raise RuntimeError, 'deviceId number must be integer in range [0,99]'
+        idStr = 'XP{0:02}'.format(num)
+        hexStr = idStr.encode('hex')
+        intVal = int('0x{0}'.format(hexStr),0)
+        msb = intVal >> 16
+        lsb = intVal & 0xffff
+        cmd = self.makeCommand(CMD_SET_DEVICE_ID,msb,lsb)
+        self.write(cmd)
+        line = self.readline()
+        if not line.startswith(SUCCESS_CHR):
+            raise RuntimeError, 'setting device id to {0} failed'.format(idStr)
 
     def getMode(self):
         """
